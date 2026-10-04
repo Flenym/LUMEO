@@ -17,8 +17,9 @@ enum MediaCacheError: Error, Equatable {
 
 // MARK: - MediaCache
 
-/// Кэш вложений чата. Один инстанс (shared). Потокобезопасен через actor-изоляцию вызовов.
-final class MediaCache {
+/// Кэш вложений чата. Один инстанс (shared). Actor: изоляция вместо ручных локов
+/// (Swift 6 concurrency-safe; NSCache потокобезопасен сам по себе).
+actor MediaCache {
     static let shared = MediaCache()
     private init() {}
 

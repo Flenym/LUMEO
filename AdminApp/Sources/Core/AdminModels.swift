@@ -22,7 +22,8 @@ struct AuditLogEntry: Identifiable, Hashable {
 // MARK: - AdminAuditLog (shared store)
 
 /// Общий audit-лог между табами: Users пишет (ban/mute/grant), Audit показывает.
-/// Singleton + @Observable: AuditView обновляется автоматически.
+/// Singleton + @Observable + MainActor: использование только из SwiftUI (Swift 6 safe).
+@MainActor
 @Observable
 final class AdminAuditLog {
     static let shared = AdminAuditLog()
