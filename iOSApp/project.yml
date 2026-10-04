@@ -53,6 +53,11 @@ targets:
     bundleId: com.lumeo.app.widgets
     sources:
       - path: Widgets
+        excludes:
+          - Info.plist
+    # Без явного Info.plist xcodebuild не грузит Info dictionary appex.
+    info:
+      path: Widgets/Info.plist
     settings:
       CODE_SIGNING_ALLOWED: NO
       PRODUCT_BUNDLE_IDENTIFIER: com.lumeo.app.widgets
@@ -64,10 +69,14 @@ targets:
     bundleId: com.lumeo.app.liveactivity
     sources:
       - path: LiveActivities
+        excludes:
+          - Info.plist
       # Shared models: экстеншен — отдельный таргет и видит только свои sources.
       # Дублирование value-типов (GameSession и др.) безопасно.
       - path: Sources/Core/Models.swift
       - path: Sources/Theme/AppTheme.swift
+    info:
+      path: LiveActivities/Info.plist
     settings:
       CODE_SIGNING_ALLOWED: NO
       PRODUCT_BUNDLE_IDENTIFIER: com.lumeo.app.liveactivity
