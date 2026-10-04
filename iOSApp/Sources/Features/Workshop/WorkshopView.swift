@@ -56,6 +56,9 @@ struct WorkshopView: View {
     @State private var showCreate = false
     @State private var showMine = false
     @State private var myFreeCount = 3
+    // UITesting-стаб модерации (flow 7): submit → pending → published + preview.
+    @State private var uitestSubmission: WorkshopTheme?
+    @State private var uitestPublished = false
     @State private var submissions: [WorkshopTheme] = [
         WorkshopTheme(
             name: "Mono Draft", detailDescription: "Draft theme", author: "you",
@@ -80,6 +83,9 @@ struct WorkshopView: View {
             VStack(spacing: 0) {
                 filterChips
                 sortBar
+                if UITesting.isActive, let sub = uitestSubmission {
+                    uitestStatusCard(submission: sub)
+                }
                 ScrollView {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                         ForEach(visible) { item in
@@ -106,6 +112,7 @@ struct WorkshopView: View {
                         Image(systemName: "plus").frame(minWidth: 44, minHeight: 44)
                     }
                     .accessibilityLabel(String(localized: "workshop.create"))
+                    .accessibilityIdentifier("workshop.create")
                 }
             }
             .sheet(item: $selected) { WorkshopDetailSheet(item: $0) }
@@ -114,6 +121,15 @@ struct WorkshopView: View {
                     submissions.insert(theme, at: 0)
                     if theme.isFree { myFreeCount += 1 }
                     showCreate = false
+                    // UITesting: стаб-модерация одобряет через ~2с.
+                    if UITesting.isActive {
+                        uitestSubmission = theme
+                        uitestPublished = false
+                        Task {
+                            try? await Task.sleep(for: .seconds(2))
+                            uitestPublished = true
+                        }
+                    }
                 }
             }
             .sheet(isPresented: $showMine) {
@@ -141,6 +157,33 @@ struct WorkshopView: View {
                 .tint(theme.current.primary)
             }
         }
+    }
+
+    // MARK: - UITesting status card (flow 7)
+
+    private func uitestStatusCard(submission: WorkshopTheme) -> some View {
+        VStack(spacing: 8) {
+            if uitestPublished {
+                Text(String(localized: "workshop.published"))
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.green)
+                    .accessibilityIdentifier("workshop.status.published")
+                Button(String(localized: "workshop.preview")) {
+                    selected = submission
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(theme.current.primary)
+                .accessibilityIdentifier("workshop.preview")
+            } else {
+                Text(String(localized: "workshop.pending"))
+                    .font(.subheadline)
+                    .foregroundStyle(.orange)
+                    .accessibilityIdentifier("workshop.status.pendingModeration")
+            }
+        }
+        .padding(10)
+        .background(theme.current.surface, in: .rect(cornerRadius: 14))
+        .padding(.horizontal)
     }
 
     private func statusText(_ status: WorkshopStatus) -> String {
@@ -269,6 +312,7 @@ struct WorkshopDetailSheet: View {
                     RoundedRectangle(cornerRadius: 20)
                         .fill(LinearGradient(colors: item.palette, startPoint: .topLeading, endPoint: .bottomTrailing))
                         .frame(height: 220)
+                        .accessibilityIdentifier("workshop.preview.canvas")
                     Text(item.name).font(.title2.bold()).foregroundStyle(theme.current.text)
                     Text(item.detailDescription).font(.subheadline).foregroundStyle(theme.current.textSecondary)
                     detailRow(key: "common.author", value: item.author)
@@ -345,6 +389,7 @@ struct WorkshopCreateSheet: View {
                 Section(String(localized: "workshop.create")) {
                     TextField(String(localized: "workshop.title"), text: $name)
                         .frame(minHeight: 44)
+                        .accessibilityIdentifier("workshop.create.title")
                     TextField(String(localized: "workshop.description"), text: $description)
                         .frame(minHeight: 44)
                     TextField("EMBER", text: $priceText)
@@ -373,6 +418,7 @@ struct WorkshopCreateSheet: View {
                 }
                 Section {
                     Button(String(localized: "workshop.submit")) {
+
                         let theme = WorkshopTheme(
                             name: name.isEmpty ? "Untitled" : name,
                             detailDescription: description,
@@ -389,6 +435,7 @@ struct WorkshopCreateSheet: View {
                     .buttonStyle(.borderedProminent)
                     .frame(minHeight: 44)
                     .disabled(name.isEmpty || (price > 0 && !canPublishPaid))
+                    .accessibilityIdentifier("workshop.submit")
                 }
                 if submitted {
                     Section(String(localized: "workshop.pending")) {

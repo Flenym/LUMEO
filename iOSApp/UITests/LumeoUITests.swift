@@ -27,6 +27,21 @@ final class LumeoUITests: XCTestCase {
         return el
     }
 
+    /// Сквозной онбординг (каждый тест стартует с --reset-state).
+    private func passOnboarding(username: String = "uitest_user") {
+        wait("onboarding.register.email").tap()
+        app.textFields["onboarding.register.email"].typeText("t@t.io")
+        wait("onboarding.register.username").tap()
+        app.textFields["onboarding.register.username"].typeText(username)
+        wait("onboarding.register.submit").tap()
+        wait("verify.code.field").tap()
+        app.textFields["verify.code.field"].typeText("123456")
+        wait("verify.submit").tap()
+        wait("profile.setup.displayName").tap()
+        app.textFields["profile.setup.displayName"].typeText("UITest")
+        wait("profile.setup.done").tap()
+    }
+
     // MARK: 1. register → verify → profile → Home
 
     func testAuthRegisterVerifyHome() throws {
@@ -49,9 +64,10 @@ final class LumeoUITests: XCTestCase {
 
     func testFriendsSearchRequestAccept() throws {
         launch()
+        passOnboarding()
         wait("tab.friends").tap()
         wait("friends.search").tap()
-        app.searchFields["friends.search"].typeText("friend_two")
+        app.textFields["friends.search"].typeText("friend_two")
         wait("friends.search.result").tap()
         wait("friends.request.send").tap()
         XCTAssertTrue(wait("friends.request.pending").exists)
@@ -63,6 +79,7 @@ final class LumeoUITests: XCTestCase {
 
     func testStatusGreenYellowRed() throws {
         launch()
+        passOnboarding()
         wait("tab.home").tap()
         wait("status.dot").tap()
         for color in ["green", "yellow", "red"] {
@@ -78,6 +95,7 @@ final class LumeoUITests: XCTestCase {
 
     func testSessionCreateInviteAcceptJoinFinish() throws {
         launch()
+        passOnboarding()
         wait("session.create").tap()
         wait("session.create.game").tap()
         wait("session.create.confirm").tap()
@@ -95,6 +113,7 @@ final class LumeoUITests: XCTestCase {
 
     func testChatSendReceiveRead() throws {
         launch()
+        passOnboarding()
         wait("tab.chats").tap()
         wait("chat.thread.first").tap()
         wait("chat.composer").tap()
@@ -109,13 +128,15 @@ final class LumeoUITests: XCTestCase {
 
     func testProfileEditSaveReload() throws {
         launch()
+        passOnboarding()
         wait("tab.profile").tap()
         wait("profile.edit").tap()
         wait("profile.block.bio").tap()
         XCTAssertTrue(wait("profile.block.system").exists, "System blocks must be non-removable")
         wait("profile.save").tap()
         app.terminate()
-        launch() // reload from "server"
+        launch() // reload from "server" (profile.saved пережил рестарт, онбординг проходим заново)
+        passOnboarding(username: "uitest_two")
         wait("tab.profile").tap()
         XCTAssertTrue(wait("profile.saved").exists)
     }
@@ -124,9 +145,13 @@ final class LumeoUITests: XCTestCase {
 
     func testWorkshopCreateModerationPublishPreview() throws {
         launch()
-        wait("tab.workshop").tap()
+        passOnboarding()
+        // Workshop живёт в Profile (ТЗ Tier3 identity), отдельного таба нет.
+        wait("tab.profile").tap()
+        wait("profile.workshop.open").tap()
         wait("workshop.create").tap()
         wait("workshop.create.title").tap()
+        app.textFields["workshop.create.title"].typeText("UITest Theme")
         wait("workshop.submit").tap()
         XCTAssertTrue(wait("workshop.status.pendingModeration").exists)
         // Stubbed moderation approves -> Published.

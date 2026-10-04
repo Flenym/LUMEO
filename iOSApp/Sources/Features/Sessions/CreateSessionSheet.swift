@@ -25,14 +25,21 @@ struct CreateSessionSheet: View {
     @State private var inviteQuery = ""
     @State private var createdSession: GameSession?
     @State private var error: String?
+    /// UITesting-фаза потока (LumeoUITests, flow 4): waiting → accepted → live → finished.
+    @State private var uitestPhase: UITestSessionPhase?
 
     private let modes = ["1x1", "2x2", "3x3", "5x5", "Squad", "Custom"]
 
-    /// Быстрый чип «Сегодня 18:00».
+    /// Быстрый чип «Сегодня 18:00» (если 18:00 прошло — завтра, иначе confirm disabled).
     static var todayAt18: Date {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: .now)
-        return calendar.date(byAdding: .hour, value: 18, to: today) ?? .now.addingTimeInterval(3600)
+        var candidate = calendar.date(byAdding: .hour, value: 18, to: calendar.startOfDay(for: .now))
+            ?? .now.addingTimeInterval(3600)
+        if candidate <= .now {
+            candidate = calendar.date(byAdding: .day, value: 1, to: candidate)
+                ?? candidate.addingTimeInterval(86400)
+        }
+        return candidate
     }
 
     static var tomorrowAt20: Date {
@@ -55,6 +62,7 @@ struct CreateSessionSheet: View {
                                 Text(game.name).tag(game as Game?)
                             }
                         }
+                        .accessibilityIdentifier("session.create.game")
                     }
                     Picker(String(localized: "session.mode"), selection: $mode) {
                         ForEach(modes, id: \.self) { Text($0) }
@@ -113,6 +121,10 @@ struct CreateSessionSheet: View {
                         Text("\(createdSession.game) · \(SessionEngine.occupancyText(createdSession))")
                     }
                 }
+                // UITesting-поток flow 4 (без сети, локальный state machine).
+                if UITesting.isActive, uitestPhase != nil {
+                    uitestFlowSection
+                }
             }
             .scrollContentBackground(.hidden)
             .background(theme.current.background)
@@ -127,6 +139,7 @@ struct CreateSessionSheet: View {
                         createDraft()
                     }
                     .disabled(!canCreate)
+                    .accessibilityIdentifier("session.create.confirm")
                 }
             }
         }
@@ -177,7 +190,58 @@ struct CreateSessionSheet: View {
         Haptics.sessionCreated()
         Task { await APIClient.shared.post("sessions", body: session) }
         createdSession = session
-        dismiss()
+        if UITesting.isActive {
+            // В тестах шит не закрываем: дальше идёт flow-панель.
+            uitestPhase = .waiting
+        } else {
+            dismiss()
+        }
+    }
+
+    // MARK: - UITesting flow (waiting → accepted → live → finished)
+
+    private enum UITestSessionPhase {
+        case waiting, accepted, live, finished
+    }
+
+    @ViewBuilder
+    private var uitestFlowSection: some View {
+        Section("Flow") {
+            switch uitestPhase {
+            case .waiting:
+                Text("Waiting for players")
+                    .accessibilityIdentifier("session.banner.waiting")
+                Button("Invite") {
+                    Haptics.selection()
+                    Task {
+                        try? await Task.sleep(for: .seconds(1.5))
+                        uitestPhase = .accepted
+                    }
+                }
+                .accessibilityIdentifier("session.invite")
+            case .accepted:
+                Text("Invite accepted ✓")
+                    .accessibilityIdentifier("session.invite.accepted")
+                Button("Join") {
+                    Haptics.join()
+                    uitestPhase = .live
+                }
+                .accessibilityIdentifier("session.join")
+            case .live:
+                Text("Live")
+                    .accessibilityIdentifier("session.banner.live")
+                Button(String(localized: "session.finish")) {
+                    Haptics.success()
+                    uitestPhase = .finished
+                }
+                .accessibilityIdentifier("session.finish")
+            case .finished:
+                Text("Finished")
+                    .accessibilityIdentifier("session.banner.finished")
+            case nil:
+                EmptyView()
+            }
+        }
     }
 }
 

@@ -34,13 +34,10 @@ targets:
     bundleId: com.lumeo.app
     sources:
       - path: Sources
+    # ВАЖНО: xcodegen требует info.path (properties без path не декодируются:
+    # "Decoding failed at path"). Значения $(...) подставляет Xcode из xcconfig.
     info:
-      properties:
-        CFBundleDisplayName: Lumeo
-        UILaunchScreen: {}
-        APIBaseURL: $(API_BASE_URL)
-        WSBaseURL: $(WS_BASE_URL)
-        EmberCurrencyName: $(EMBER_CURRENCY_NAME)
+      path: Info.plist
     settings:
       CODE_SIGNING_ALLOWED: NO
       PRODUCT_BUNDLE_IDENTIFIER: com.lumeo.app
@@ -78,12 +75,23 @@ targets:
     bundleId: com.lumeo.app.tests
     sources:
       - path: Tests
-      - path: UITests
     settings:
       CODE_SIGNING_ALLOWED: NO
       PRODUCT_BUNDLE_IDENTIFIER: com.lumeo.app.tests
     dependencies:
       - target: LumeoApp
+
+  # UI-тесты — отдельным bundle.ui-testing таргетом (XCUI нельзя класть в unit bundle).
+  LumeoUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "26.0"
+    bundleId: com.lumeo.app.uitests
+    sources:
+      - path: UITests
+    settings:
+      CODE_SIGNING_ALLOWED: NO
+      PRODUCT_BUNDLE_IDENTIFIER: com.lumeo.app.uitests
 
 schemes:
   Lumeo:
@@ -96,5 +104,6 @@ schemes:
       config: Development
       targets:
         - LumeoTests
+        - LumeoUITests
     archive:
       config: Production

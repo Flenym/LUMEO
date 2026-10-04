@@ -31,7 +31,7 @@ final class AdminUITests: XCTestCase {
         // Users list -> open flagged user.
         wait("admin.tab.users").tap()
         wait("admin.users.search").tap()
-        app.searchFields["admin.users.search"].typeText("reported_user")
+        app.textFields["admin.users.search"].typeText("reported_user")
         wait("admin.users.row").tap()
 
         // Ban with reason (metadata-only review, no E2EE plaintext visible).

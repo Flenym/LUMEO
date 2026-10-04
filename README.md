@@ -1,5 +1,14 @@
 # Название приложения и админ-приложение Lumeo
 
+> **Быстрый старт — за 10 минут до рабочего сервера и 2 unsigned IPA:**
+> 1. `npm install` — ставит Backend + Shared (workspaces).
+> 2. `npm run build` — сборка Shared + Backend.
+> 3. `npm run dev` — сервер на `http://localhost:5267` (проверка: `curl http://localhost:5267/health`).
+> 4. IPA: локально на Windows не собираются (нужен macOS + Xcode) — забери готовые из GitHub Actions: вкладка **Actions → последний зелёный CI → Artifacts → `Lumeo-unsigned.ipa` + `Lumeo-Admin-unsigned.ipa`**. На Mac: `./scripts/build-unsigned-ipa.sh --scheme Lumeo --project iOSApp/Lumeo.xcodeproj --output Lumeo-unsigned.ipa` (и то же для `LumeoAdmin`).
+> 5. Полный пошаговый runbook: [`Docs/SETUP.md`](Docs/SETUP.md). Контракты API: [`Docs/API.md`](Docs/API.md). Acceptance-чеклист: [`Docs/ACCEPTANCE.md`](Docs/ACCEPTANCE.md).
+>
+> ⚠️ Unsigned IPA — только для CI/инспекции, на реальный iPhone не ставится (нужна подпись, см. `Docs/RELEASING.md`).
+
 # Техническое задание на iOS-приложение для друзей и игровых компаний
 
 ## 0. Рабочая концепция

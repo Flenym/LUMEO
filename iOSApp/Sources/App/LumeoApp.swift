@@ -10,7 +10,7 @@ import LocalAuthentication
 
 // MARK: - MainTab
 
-enum MainTab: Hashable, CaseIterable {
+enum MainTab: String, Hashable, CaseIterable {
     case home, friends, chats, squads, profile
 }
 
@@ -54,6 +54,15 @@ struct LumeoApp: App {
     /// Stub: реальная привязка evaluatePolicy + Keychain — Фаза B.
     @AppStorage("lumeo.faceIDEnabled") private var faceIDEnabled = false
     @State private var locked = false
+    /// Регистрация пройдена (онбординг register → verify → profile).
+    /// `--reset-state` (UITests) сбрасывает флаг при старте.
+    @AppStorage("lumeo.registered") private var registered = false
+
+    init() {
+        if UITesting.shouldReset {
+            UserDefaults.standard.removeObject(forKey: "lumeo.registered")
+        }
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -89,6 +98,7 @@ struct LumeoApp: App {
                 }
                 .glassEffect(.regular.tint(theme.current.primary).interactive(), in: .capsule)
                 .padding(.bottom, 76)
+                .accessibilityIdentifier("session.create")
                 .accessibilityLabel(String(localized: "session.create"))
                 .accessibilityHint(String(localized: "session.create.hint"))
                 .sensoryFeedback(.impact, trigger: showCreateSession)
@@ -101,6 +111,11 @@ struct LumeoApp: App {
             .environment(\.locale, theme.locale)
             .overlay(alignment: .top) {
                 VStack(spacing: 8) {
+                    // UITesting-полоса: детерминированное переключение табов
+                    // (идентификаторы tab.* для LumeoUITests).
+                    if UITesting.isActive {
+                        MainTabStrip(tab: $tab)
+                    }
                     if health == .unreachable {
                         HealthBanner {
                             healthAttempts = 0
@@ -131,6 +146,15 @@ struct LumeoApp: App {
             .fullScreenCover(isPresented: $locked) {
                 FaceLockView {
                     authenticate()
+                }
+            }
+            // Онбординг поверх табов, пока не пройдена регистрация.
+            .fullScreenCover(isPresented: Binding(
+                get: { !registered },
+                set: { if $0 { registered = false } }
+            )) {
+                OnboardingView {
+                    registered = true
                 }
             }
             .onOpenURL { url in
@@ -239,6 +263,31 @@ struct LumeoApp: App {
                 }
             }
         }
+    }
+}
+
+// MARK: - MainTabStrip (UITesting)
+
+/// Полоса переключения табов для UI-тестов. Видна только с `--uitesting`.
+private struct MainTabStrip: View {
+    @Binding var tab: MainTab
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(MainTab.allCases, id: \.self) { option in
+                    Button(option.rawValue) {
+                        tab = option
+                    }
+                    .font(.caption2)
+                    .buttonStyle(.bordered)
+                    .controlSize(.mini)
+                    .accessibilityIdentifier("tab.\(option.rawValue)")
+                }
+            }
+            .padding(6)
+        }
+        .background(.ultraThinMaterial)
     }
 }
 

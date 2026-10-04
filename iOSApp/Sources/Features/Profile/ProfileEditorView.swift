@@ -21,6 +21,7 @@ struct ProfileEditorView: View {
                 Section(String(localized: "profile.editor.hint")) {
                     ForEach($layout.blocks, id: \.id) { $block in
                         HStack(spacing: 10) {
+
                             Image(systemName: block.kind.isSystem ? "lock.fill" : "line.3.horizontal")
                                 .foregroundStyle(theme.current.textSecondary)
                                 .frame(width: 28, height: 44)
@@ -62,6 +63,12 @@ struct ProfileEditorView: View {
                             return true
                         } isTargeted: { _ in }
                         .accessibilityLabel(String(localized: "profile.block.\(block.kind.rawValue)"))
+                        // UITests flow 6: bio-блок (about) + системный блок (avatar).
+                        .accessibilityIdentifier(
+                            block.kind == .about ? "profile.block.bio"
+                                : block.kind == .avatar ? "profile.block.system"
+                                : "profile.block.\(block.kind.rawValue)"
+                        )
                     }
                     .onMove { from, to in
                         layout.blocks.move(fromOffsets: from, toOffset: to)
@@ -132,8 +139,13 @@ struct ProfileEditorView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { EditButton().frame(minWidth: 44, minHeight: 44) }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(String(localized: "common.done")) { dismiss() }
-                        .frame(minHeight: 44)
+                    Button(String(localized: "common.done")) {
+                        // Флаг сохранения для flow 6 (переживает рестарт).
+                        UserDefaults.standard.set(true, forKey: "lumeo.profile.saved")
+                        dismiss()
+                    }
+                    .frame(minHeight: 44)
+                    .accessibilityIdentifier("profile.save")
                 }
             }
         }

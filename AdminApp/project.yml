@@ -45,13 +45,9 @@ targets:
     bundleId: com.lumeo.admin
     sources:
       - path: Sources
+    # ВАЖНО: xcodegen требует info.path (properties без path не декодируются).
     info:
-      properties:
-        CFBundleDisplayName: Lumeo Admin
-        UILaunchScreen: {}
-        APIBaseURL: $(API_BASE_URL)
-        WSBaseURL: $(WS_BASE_URL)
-        EmberCurrencyName: $(EMBER_CURRENCY_NAME)
+      path: Info.plist
     settings:
       CODE_SIGNING_ALLOWED: NO
       PRODUCT_BUNDLE_IDENTIFIER: com.lumeo.admin
@@ -64,12 +60,23 @@ targets:
     bundleId: com.lumeo.admin.tests
     sources:
       - path: Tests
-      - path: UITests
     settings:
       CODE_SIGNING_ALLOWED: NO
       PRODUCT_BUNDLE_IDENTIFIER: com.lumeo.admin.tests
     dependencies:
       - target: LumeoAdmin
+
+  # UI-тесты — отдельным bundle.ui-testing таргетом.
+  LumeoAdminUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "26.0"
+    bundleId: com.lumeo.admin.uitests
+    sources:
+      - path: UITests
+    settings:
+      CODE_SIGNING_ALLOWED: NO
+      PRODUCT_BUNDLE_IDENTIFIER: com.lumeo.admin.uitests
 
 schemes:
   LumeoAdmin:
@@ -82,5 +89,6 @@ schemes:
       config: Development
       targets:
         - LumeoAdminTests
+        - LumeoAdminUITests
     archive:
       config: Production

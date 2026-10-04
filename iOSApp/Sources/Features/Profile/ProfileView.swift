@@ -11,6 +11,8 @@ struct ProfileView: View {
     @State private var layout: ProfileLayout = .default
     @State private var isEditing = false
     @State private var showWallet = false
+    /// Флаг сохранения конструктора (переживает рестарт; UITests flow 6).
+    @AppStorage("lumeo.profile.saved") private var profileSaved = false
 
     /// Демо-день рождения: сегодня (чтобы показать 🎂-кейс).
     private var demoBirthday: Date { .now }
@@ -32,6 +34,21 @@ struct ProfileView: View {
                     LevelView(xp: 2450, compact: true)
                     StreakView(personalDays: 12, squadDays: 8, compact: true)
                     AchievementsGrid(compact: true)
+                    if profileSaved {
+                        Label(String(localized: "profile.themes.saved"), systemImage: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.green)
+                            .accessibilityIdentifier("profile.saved")
+                    }
+                    NavigationLink {
+                        WorkshopView()
+                    } label: {
+                        Label(String(localized: "workshop.title"), systemImage: "photo.stack")
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(theme.current.primary)
+                    .accessibilityIdentifier("profile.workshop.open")
                 }
                 .padding()
             }
@@ -50,6 +67,7 @@ struct ProfileView: View {
                         isEditing.toggle()
                     }
                     .frame(minHeight: 44)
+                    .accessibilityIdentifier("profile.edit")
                 }
             }
             .sheet(isPresented: $isEditing) {

@@ -7,7 +7,7 @@
     "Shared"
   ],
   "scripts": {
-    "dev": "npm --workspace Backend run dev",
+    "dev": "npm --workspace Backend run start:dev",
     "build": "npm --workspace Shared run build && npm --workspace Backend run build",
     "test": "npm --workspace Backend run test && npm --workspace Shared run typecheck",
     "typecheck": "npm --workspace Shared run typecheck",

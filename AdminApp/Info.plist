@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Lumeo Admin Info.plist.
+  Значения подставляются из build settings (AdminApp/project.yml › settings.configs).
+  Никаких захардкоженных URL.
+-->
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>APIBaseURL</key>
+	<string>$(API_BASE_URL)</string>
+	<key>WSBaseURL</key>
+	<string>$(WS_BASE_URL)</string>
+	<key>EmberCurrencyName</key>
+	<string>$(EMBER_CURRENCY_NAME)</string>
+</dict>
+</plist>

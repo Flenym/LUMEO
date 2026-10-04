@@ -33,6 +33,9 @@ struct HomeView: View {
     @State private var isLoading = true
     @State private var showCreateSession = false
     @State private var inviteFriend: Friend?
+    @State private var myAvailability: Availability = .green
+    @State private var showStatusEditor = false
+    @State private var statusJustSaved = false
 
     var body: some View {
         NavigationStack {
@@ -72,6 +75,7 @@ struct HomeView: View {
                         Image(systemName: "plus.circle.fill")
                     }
                     .tint(theme.current.primary)
+                    .accessibilityIdentifier("session.create.toolbar")
                     .accessibilityLabel(String(localized: "session.create"))
                 }
             }
@@ -112,9 +116,33 @@ struct HomeView: View {
                 Text(PreviewData.me.displayName)
                     .font(.headline)
                     .foregroundStyle(theme.current.text)
-                Text("🟢 \(String(localized: "status.green"))")
-                    .font(.subheadline)
-                    .foregroundStyle(theme.current.textSecondary)
+                Button {
+                    Haptics.selection()
+                    showStatusEditor = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Text(myAvailability.dotEmoji)
+                            .accessibilityIdentifier("status.dot.\(myAvailability.rawValue)")
+                        Text(String(localized: "\(myAvailability.statusKey)"))
+                            .font(.subheadline)
+                            .foregroundStyle(theme.current.textSecondary)
+                        if statusJustSaved {
+                            Text("✓")
+                                .font(.subheadline.bold())
+                                .foregroundStyle(theme.current.success)
+                                .accessibilityIdentifier("status.saved")
+                        }
+                    }
+                }
+                .accessibilityIdentifier("status.dot")
+                .accessibilityLabel(String(localized: "status.change"))
+            }
+            .sheet(isPresented: $showStatusEditor) {
+                StatusEditorSheet(current: myAvailability) { chosen in
+                    myAvailability = chosen
+                    statusJustSaved = true
+                    Haptics.success()
+                }
             }
             Spacer()
             NavigationLink {
@@ -190,6 +218,9 @@ struct HomeView: View {
             Text(title)
                 .font(.title3.bold())
                 .foregroundStyle(theme.current.text)
+                .accessibilityIdentifier(
+                    title == String(localized: "home.freeNow") ? "home.freeList" : "home.section"
+                )
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                 ForEach(friends) { friend in
                     FriendCard(
@@ -284,6 +315,83 @@ struct HomeView: View {
         try? await Task.sleep(for: .seconds(0.6))
         friends = PreviewData.friends
         isLoading = false
+    }
+}
+
+// MARK: - Availability helpers (editor)
+
+extension Availability {
+    var dotEmoji: String {
+        switch self {
+        case .green: "🟢"
+        case .yellow: "🟡"
+        case .red: "🔴"
+        }
+    }
+
+    var statusKey: String {
+        switch self {
+        case .green: "status.green"
+        case .yellow: "status.yellow"
+        case .red: "status.red"
+        }
+    }
+}
+
+// MARK: - StatusEditorSheet
+
+/// Редактор статуса: 3 цвета + сохранить. Кастомный текст/таймер — в полной
+/// версии (паритет с backend: statuses.service + StatusEngine).
+struct StatusEditorSheet: View {
+    @Environment(ThemeManager.self) private var theme
+    @Environment(\.dismiss) private var dismiss
+    @State private var selected: Availability
+    var onSave: (Availability) -> Void
+
+    init(current: Availability, onSave: @escaping (Availability) -> Void) {
+        _selected = State(initialValue: current)
+        self.onSave = onSave
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 14) {
+                Text(String(localized: "status.editor.title"))
+                    .font(.headline)
+                    .foregroundStyle(theme.current.text)
+                ForEach(Availability.allCases, id: \.self) { option in
+                    Button {
+                        Haptics.selection()
+                        selected = option
+                    } label: {
+                        HStack {
+                            Text(option.dotEmoji)
+                            Text(String(localized: "\(option.statusKey)"))
+                                .foregroundStyle(theme.current.text)
+                            Spacer()
+                            if selected == option {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(theme.current.success)
+                            }
+                        }
+                        .padding()
+                        .background(theme.current.surface, in: .rect(cornerRadius: 14))
+                    }
+                    .accessibilityIdentifier("status.color.\(option.rawValue)")
+                }
+                Button(String(localized: "status.save")) {
+                    onSave(selected)
+                    dismiss()
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(theme.current.primary)
+                .accessibilityIdentifier("status.save")
+                Spacer()
+            }
+            .padding()
+            .background(theme.current.background)
+        }
+        .preferredColorScheme(.dark)
     }
 }
 

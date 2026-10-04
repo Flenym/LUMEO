@@ -1,9 +1,9 @@
 // Lumeo — Tests/EnginesTests.swift
 // XCTest для чистой логики: Status / Session / Streak / XP.
 // Паритет с backend (Backend/test/*.spec.ts + Shared/contracts).
-// NOTE(Xcode): добавить @testable import <MainTarget> (имя продукта в Xcode 26).
-
 import XCTest
+
+@testable import LumeoApp
 
 // MARK: - StatusEngineTests
 

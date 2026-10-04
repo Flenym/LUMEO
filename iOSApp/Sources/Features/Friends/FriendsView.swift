@@ -57,11 +57,18 @@ struct FriendsView: View {
     @State private var blockCandidate: Friend?
     /// Cooldown повторных заявок: friendID → время последней отправки (24ч).
     @State private var sentRequests: [UUID: Date] = [:]
+    // UITesting-стаб заявки (LumeoUITests, flow 2): результат → send → pending → accepted.
+    @State private var uitestSelected = false
+    @State private var uitestSent = false
+    @State private var uitestAccepted = false
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 filterChips
+                if UITesting.isActive {
+                    uitestRequestPanel
+                }
                 List(visible) { friend in
                     FriendRow(friend: friend, cooldown: cooldownRemaining(for: friend))
                         .listRowBackground(theme.current.surface)
@@ -212,6 +219,64 @@ struct FriendsView: View {
             .padding(.horizontal)
             .padding(.vertical, 8)
         }
+    }
+
+    // MARK: - UITesting request stub (flow 2)
+
+    /// Детерминированный стаб: поиск → результат friend_two → send → pending,
+    /// через ~1.5с стаб-собеседник принимает → accepted. Только с `--uitesting`.
+    private var uitestRequestPanel: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            TextField(String(localized: "friends.search"), text: $query)
+                .textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier("friends.search")
+            if !query.isEmpty && !uitestSelected {
+                Button {
+                    Haptics.selection()
+                    uitestSelected = true
+                } label: {
+                    HStack {
+                        Text("@friend_two")
+                            .foregroundStyle(theme.current.text)
+                        Spacer()
+                        Text(String(localized: "friends.add"))
+                            .font(.caption)
+                            .foregroundStyle(theme.current.primary)
+                    }
+                    .padding(10)
+                    .background(theme.current.surface, in: .rect(cornerRadius: 12))
+                }
+                .accessibilityIdentifier("friends.search.result")
+            }
+            if uitestSelected && !uitestSent {
+                Button(String(localized: "friends.request.send")) {
+                    Haptics.selection()
+                    uitestSent = true
+                    // Стаб-собеседник принимает заявку.
+                    Task {
+                        try? await Task.sleep(for: .seconds(1.5))
+                        uitestAccepted = true
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(theme.current.primary)
+                .accessibilityIdentifier("friends.request.send")
+            }
+            if uitestSent {
+                Text("Pending")
+                    .font(.caption)
+                    .foregroundStyle(theme.current.warning)
+                    .accessibilityIdentifier("friends.request.pending")
+            }
+            if uitestAccepted {
+                Text("Accepted ✓")
+                    .font(.caption.bold())
+                    .foregroundStyle(theme.current.success)
+                    .accessibilityIdentifier("friends.request.accepted")
+            }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 4)
     }
 
     // MARK: - Filtering / sorting

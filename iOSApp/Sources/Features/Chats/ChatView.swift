@@ -42,6 +42,7 @@ struct ChatListView: View {
                     ChatThreadRow(thread: thread)
                 }
                 .listRowBackground(theme.current.surface)
+                .accessibilityIdentifier(thread.id == visible.first?.id ? "chat.thread.first" : "chat.thread")
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button {
                         togglePin(thread)
@@ -330,6 +331,16 @@ struct ChatView: View {
         draft = ""
         replyTo = nil
         // TODO(e2ee): encryptText → MessageMetadata → APIClient.sendCiphertext + socket.send.
+        // UITesting-стаб прочтения: собеседник "читает" через ~2с (read receipt).
+        if UITesting.isActive {
+            Task {
+                try? await Task.sleep(for: .seconds(2))
+                if let i = messages.firstIndex(where: { $0.id == message.id }),
+                   messages[i].readByIDs.isEmpty {
+                    messages[i].readByIDs.append(UUID())
+                }
+            }
+        }
     }
 
     private func sendVoice(duration: Double, waveform: [Float]) {
@@ -581,6 +592,7 @@ struct MessageBubble: View {
                                 .font(.caption2)
                                 .foregroundStyle(message.readByIDs.isEmpty ? theme.current.textSecondary : theme.current.secondary)
                                 .accessibilityLabel(message.readByIDs.isEmpty ? String(localized: "chats.delivered") : String(localized: "chats.read"))
+                                .accessibilityIdentifier(message.readByIDs.isEmpty ? "chat.message.delivered" : "chat.message.read")
                         }
                     }
                     // «Кто посмотрел» — в групповом чате.
@@ -595,6 +607,7 @@ struct MessageBubble: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(message.text ?? String(localized: "chats.attachment"))
+        .accessibilityIdentifier(isMine ? "chat.message.sent" : "chat.message")
     }
 
     private var receiptText: String {
@@ -741,9 +754,14 @@ struct ComposerView: View {
                         .foregroundStyle(theme.current.secondary)
                 }
                 .accessibilityLabel(String(localized: "chats.attach"))
-                TextField(String(localized: "chats.message"), text: $draft, axis: .vertical)
-                    .textFieldStyle(.roundedBorder)
-                    .lineLimit(1...4)
+                // TextEditor (а не TextField): многострочность + textView для UITests.
+                TextEditor(text: $draft)
+                    .frame(minHeight: 36, maxHeight: 110)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(6)
+                    .background(theme.current.surfaceSecondary, in: .rect(cornerRadius: 12))
+                    .accessibilityIdentifier("chat.composer")
+                    .accessibilityLabel(String(localized: "chats.message"))
                 if draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     VoiceRecordButton(onSend: onSendVoice)
                 } else {
@@ -753,6 +771,7 @@ struct ComposerView: View {
                             .foregroundStyle(theme.current.primary)
                     }
                     .accessibilityLabel(String(localized: "chats.send"))
+                    .accessibilityIdentifier("chat.send")
                 }
             }
             .padding(.horizontal)

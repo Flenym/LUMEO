@@ -1,8 +1,8 @@
 // Lumeo — Tests/ProfileWorkshopTests.swift
 // XCTest: block limits, system-block delete запрещён, 5-free rule, theme apply.
-// NOTE(Xcode): добавить @testable import <MainTarget> (имя продукта в Xcode 26).
-
 import XCTest
+
+@testable import LumeoApp
 
 // MARK: - ProfileLayoutRulesTests
 

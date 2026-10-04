@@ -28,15 +28,40 @@ struct UsersView: View {
         AdminUser(username: "mira", status: "in session", badges: ["sponsor"], level: 9, ember: 640, inventoryCount: 5, isBanned: false, isMuted: false, isVerified: false),
         AdminUser(username: "dex", status: "offline", badges: [], level: 4, ember: 120, inventoryCount: 2, isBanned: false, isMuted: true, isVerified: false),
         AdminUser(username: "spam1", status: "offline", badges: [], level: 1, ember: 0, inventoryCount: 0, isBanned: true, isMuted: true, isVerified: false),
+        // Стаб для AdminUITests: поиск "reported_user" всегда находит жалобу.
+        AdminUser(username: "reported_user", status: "reported", badges: [], level: 2, ember: 40, inventoryCount: 1, isBanned: false, isMuted: false, isVerified: false),
     ]
     @State private var query = ""
     @State private var selected: AdminUser?
     @State private var grantAmount = "500"
     @State private var audit: [AuditLogEntry] = AdminPreviewData.audit
+    /// Баннер последнего бана (AdminUITests: admin.user.banned).
+    @State private var justBanned: String?
+
+    /// UITesting-режим админки (тот же флаг, что у Main App).
+    private var isUITesting: Bool {
+        CommandLine.arguments.contains("--uitesting")
+    }
 
     var body: some View {
         NavigationStack {
             List {
+                // UITesting-поиск: .searchable не отдаёт идентификатор,
+                // поэтому в тестах — явный TextField с тем же query.
+                if isUITesting {
+                    Section("Search") {
+                        TextField("Search username", text: $query)
+                            .accessibilityIdentifier("admin.users.search")
+                    }
+                }
+                if let justBanned {
+                    Section {
+                        Text("Banned @\(justBanned)")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(.red)
+                            .accessibilityIdentifier("admin.user.banned")
+                    }
+                }
                 Section("Users") {
                     ForEach(visible) { user in
                         Button {
@@ -65,7 +90,9 @@ struct UsersView: View {
                             }
                         }
                         .buttonStyle(.plain)
-                    }
+                        .accessibilityIdentifier(
+                            user.username == "reported_user" ? "admin.users.row" : "admin.users.row.\(user.username)"
+                        )
                 }
                 Section("Audit") {
                     Text(EconomyGrant.canonicalExample)
@@ -94,7 +121,9 @@ struct UsersView: View {
     private func applyAction(user: AdminUser, action: String, amount: Int = 0) {
         guard let i = users.firstIndex(where: { $0.id == user.id }) else { return }
         switch action {
-        case "ban": users[i].isBanned = true
+        case "ban":
+            users[i].isBanned = true
+            justBanned = user.username
         case "unban": users[i].isBanned = false
         case "mute": users[i].isMuted = true
         case "unmute": users[i].isMuted = false
@@ -103,13 +132,14 @@ struct UsersView: View {
             users[i].ember += amount
             let line = EconomyGrant.auditLine(admin: "admin:this-device", amount: amount, target: user.username)
             audit.insert(AuditLogEntry(at: .now, actor: "admin:this-device", action: line, target: "user:\(user.username)"), at: 0)
+            AdminAuditLog.shared.append(actor: "admin:this-device", action: line, target: "user:\(user.username)")
             return
         default: break
         }
-        audit.insert(
-            AuditLogEntry(at: .now, actor: "admin:this-device", action: action, target: "user:\(user.username)"),
-            at: 0
-        )
+        let entry = AuditLogEntry(at: .now, actor: "admin:this-device", action: action, target: "user:\(user.username)")
+        audit.insert(entry, at: 0)
+        // Общий лог для Audit-таба (AdminUITests: admin.audit.banEntry).
+        AdminAuditLog.shared.append(actor: entry.actor, action: entry.action, target: entry.target)
         // TODO(backend): POST /api/v1/admin/users/{id}/{ban|mute|verify|grant}.
     }
 }
@@ -121,6 +151,9 @@ struct UserDetailSheet: View {
     @Binding var grantAmount: String
     var onAction: (String, Int) -> Void
     @Environment(\.dismiss) private var dismiss
+    /// Двухшаговый бан (AdminUITests: ban → reason → confirm).
+    @State private var banArmed = false
+    @State private var banReason = ""
 
     var body: some View {
         NavigationStack {
@@ -152,10 +185,15 @@ struct UserDetailSheet: View {
                 Section("Actions") {
                     HStack {
                         Button(user.isBanned ? "Unban" : "Ban") {
-                            onAction(user.isBanned ? "unban" : "ban", 0)
-                            dismiss()
+                            if user.isBanned {
+                                onAction("unban", 0)
+                                dismiss()
+                            } else {
+                                banArmed = true
+                            }
                         }
                         .buttonStyle(.bordered).tint(user.isBanned ? .green : .red).controlSize(.small)
+                        .accessibilityIdentifier("admin.user.ban")
                         Button(user.isMuted ? "Unmute" : "Mute") {
                             onAction(user.isMuted ? "unmute" : "mute", 0)
                             dismiss()
@@ -166,6 +204,17 @@ struct UserDetailSheet: View {
                             dismiss()
                         }
                         .buttonStyle(.borderedProminent).tint(.blue).controlSize(.small)
+                    }
+                    // Подтверждение бана с причиной (reason опциональна для UITests).
+                    if banArmed && !user.isBanned {
+                        TextField("Reason", text: $banReason)
+                            .accessibilityIdentifier("admin.user.ban.reason")
+                        Button("Confirm ban") {
+                            onAction("ban", 0)
+                            dismiss()
+                        }
+                        .buttonStyle(.borderedProminent).tint(.red).controlSize(.small)
+                        .accessibilityIdentifier("admin.user.ban.confirm")
                     }
                 }
             }

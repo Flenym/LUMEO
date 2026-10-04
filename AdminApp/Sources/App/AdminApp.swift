@@ -41,22 +41,53 @@ final class AdminSession {
 
 @main
 struct AdminApp: App {
-    @State private var session = AdminSession()
+    @State private var session: AdminSession
+    @State private var selection = 0
+
+    /// UITests (`--uitesting`): пропускаем provision-экран, сразу табы.
+    private static var isUITesting: Bool {
+        CommandLine.arguments.contains("--uitesting")
+    }
+
+    init() {
+        // Provision ДО чтения hasCredential в AdminSession.init.
+        if Self.isUITesting {
+            AdminCredentialStore.provisionDemo()
+        }
+        _session = State(initialValue: AdminSession())
+    }
 
     var body: some Scene {
         WindowGroup {
             if session.isProvisioned {
-                TabView {
+                TabView(selection: $selection) {
                     Tab("Overview", systemImage: "gauge.with.dots.needle.67percent") { OverviewView() }
+                        .tag(0)
                     Tab("Users", systemImage: "person.2") { UsersView() }
+                        .tag(1)
                     Tab("Moderation", systemImage: "shield") { ModerationView() }
+                        .tag(2)
                     Tab("Verification", systemImage: "checkmark.seal") { VerificationView() }
+                        .tag(3)
                     Tab("Economy", systemImage: "coins") { EconomyView() }
+                        .tag(4)
                     Tab("Content", systemImage: "photo.stack") { ContentView() }
+                        .tag(5)
                     Tab("Analytics", systemImage: "chart.bar") { AnalyticsView() }
+                        .tag(6)
                     Tab("Server", systemImage: "server.rack") { ServerView() }
+                        .tag(7)
+                    Tab("Audit", systemImage: "list.bullet.rectangle") { AuditView() }
+                        .tag(8)
                 }
                 .tint(.orange)
+                .overlay(alignment: .top) {
+                    // UITesting-полоса: детерминированное переключение табов
+                    // (идентификаторы admin.tab.* для AdminUITests).
+                    if Self.isUITesting {
+                        AdminTabStrip(selection: $selection)
+                    }
+                }
             } else {
                 // Нет credential — только статус + кнопка запроса (без публичного логина).
                 VStack(spacing: 12) {
@@ -77,6 +108,43 @@ struct AdminApp: App {
                 .padding()
             }
         }
+    }
+}
+
+// MARK: - AdminTabStrip (UITesting)
+
+/// Полоса переключения табов для UI-тестов. Видна только с `--uitesting`.
+private struct AdminTabStrip: View {
+    @Binding var selection: Int
+
+    private let tabs: [(id: String, title: String)] = [
+        ("admin.tab.overview", "Overview"),
+        ("admin.tab.users", "Users"),
+        ("admin.tab.moderation", "Moderation"),
+        ("admin.tab.verification", "Verification"),
+        ("admin.tab.economy", "Economy"),
+        ("admin.tab.content", "Content"),
+        ("admin.tab.analytics", "Analytics"),
+        ("admin.tab.server", "Server"),
+        ("admin.tab.audit", "Audit"),
+    ]
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(tabs, id: \.id) { tab in
+                    Button(tab.title) {
+                        selection = tabs.firstIndex(where: { $0.id == tab.id }) ?? 0
+                    }
+                    .font(.caption2)
+                    .buttonStyle(.bordered)
+                    .controlSize(.mini)
+                    .accessibilityIdentifier(tab.id)
+                }
+            }
+            .padding(6)
+        }
+        .background(.ultraThinMaterial)
     }
 }
 

@@ -6,6 +6,7 @@
 // attachment kind/size, report_cluster_id. Тексты жалоб пользователей — можно (это репорты, не чаты).
 
 import Foundation
+import Observation
 
 // MARK: - AuditLogEntry
 
@@ -16,6 +17,30 @@ struct AuditLogEntry: Identifiable, Hashable {
     var actor: String
     var action: String
     var target: String
+}
+
+// MARK: - AdminAuditLog (shared store)
+
+/// Общий audit-лог между табами: Users пишет (ban/mute/grant), Audit показывает.
+/// Singleton + @Observable: AuditView обновляется автоматически.
+@Observable
+final class AdminAuditLog {
+    static let shared = AdminAuditLog()
+
+    var entries: [AuditLogEntry] = []
+
+    private init() {}
+
+    /// Ленивый seed демо-данными (чтобы превью/тесты видели историю).
+    func seedIfEmpty() {
+        if entries.isEmpty {
+            entries = AdminPreviewData.audit
+        }
+    }
+
+    func append(actor: String, action: String, target: String) {
+        entries.insert(AuditLogEntry(at: .now, actor: actor, action: action, target: target), at: 0)
+    }
 }
 
 // MARK: - AdminMessageMetadata

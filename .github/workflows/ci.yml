@@ -8,24 +8,25 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# NOTE: монорепо на npm workspaces (Backend + Shared), единый корневой
+# package-lock.json. Поэтому `npm ci` всегда в корне, дальше — --workspace.
+# iOS: Xcode latest (нужен SDK iOS 26 + Swift 6), симулятор iPhone 17.
+
 jobs:
   shared:
     name: shared (node build)
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: Shared
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: Shared/package-lock.json
+          cache-dependency-path: package-lock.json
       - run: npm ci
-      - run: npm run build
-      - run: npm run typecheck --if-present
+      - run: npm run build --workspace=Shared
+      - run: npm run typecheck --workspace=Shared
 
   backend:
     name: backend (build/test/integration/seed-validate)
@@ -43,9 +44,6 @@ jobs:
         options: >-
           --health-cmd="pg_isready -U lumeo"
           --health-interval=10s --health-timeout=5s --health-retries=5
-    defaults:
-      run:
-        working-directory: Backend
     env:
       DATABASE_URL: postgres://lumeo:lumeo@localhost:5432/lumeo_test
       JWT_SECRET: ci-test-secret
@@ -56,18 +54,17 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: Backend/package-lock.json
+          cache-dependency-path: package-lock.json
       - run: npm ci
-      - run: npm run build --if-present
-      - run: npm test --if-present
+      - run: npm run build --workspace=Backend
+      - run: npm test --workspace=Backend
       - name: Seed-validate (apply migrations to throwaway Postgres)
         run: |
-          echo "==> expected migrations: 001_init (required), 002/003 (backend agent scope)"
-          test -f migrations/001_init.sql || { echo "ERROR: migrations/001_init.sql missing"; exit 1; }
-          for f in migrations/002_*.sql migrations/003_*.sql; do
-            [ -e "$f" ] && echo "found: $f" || echo "NOTE: $f not present yet (backend scope) — skipping"
+          echo "==> expected migrations: 001_init + 002_constraints + 003_seed"
+          for f in migrations/001_init.sql migrations/002_constraints.sql migrations/003_seed.sql; do
+            test -f "Backend/$f" || { echo "ERROR: Backend/$f missing"; exit 1; }
           done
-          for f in migrations/*.sql; do
+          for f in Backend/migrations/*.sql; do
             echo "==> applying $f"
             psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f"
           done
@@ -96,8 +93,11 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - name: Select Xcode 16
-        run: sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer || sudo xcode-select -p
+      - name: Select latest Xcode (needs iOS 26 SDK + Swift 6)
+        run: |
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer || sudo xcode-select -p
+          xcodebuild -version
+          xcrun simctl list devicetypes | grep -i iphone | head -5 || true
       - name: Install xcodegen
         run: |
           if ! command -v xcodegen >/dev/null 2>&1; then
@@ -114,28 +114,21 @@ jobs:
             -project iOSApp/Lumeo.xcodeproj \
             -scheme Lumeo \
             -configuration Development \
-            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.0' \
+            -destination 'platform=iOS Simulator,name=iPhone 17' \
             -derivedDataPath DerivedData \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
-      - name: Test 7 critical paths (auth/friends/status/session/chat/profile/workshop)
+      - name: Test unit + UI (engines/rules + 7 critical flows)
         run: |
           xcodebuild test-without-building \
             -project iOSApp/Lumeo.xcodeproj \
             -scheme Lumeo \
             -configuration Development \
-            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.0' \
+            -destination 'platform=iOS Simulator,name=iPhone 17' \
             -derivedDataPath DerivedData \
-            -resultBundlePath TestResults/LumeoTests.xcresult \
-            -only-testing:LumeoTests/AuthTests \
-            -only-testing:LumeoTests/FriendsTests \
-            -only-testing:LumeoTests/StatusTests \
-            -only-testing:LumeoTests/SessionTests \
-            -only-testing:LumeoTests/ChatTests \
-            -only-testing:LumeoTests/ProfileTests \
-            -only-testing:LumeoTests/WorkshopTests
+            -resultBundlePath TestResults/LumeoTests.xcresult
       - name: Screenshots (10 screens)
         if: always()
-        run: chmod +x scripts/screenshots.sh && ./scripts/screenshots.sh --project iOSApp/Lumeo.xcodeproj --scheme Lumeo --out screenshots
+        run: chmod +x scripts/screenshots.sh && ./scripts/screenshots.sh --project iOSApp/Lumeo.xcodeproj --scheme Lumeo --device "iPhone 17" --out screenshots
       - name: Upload screenshots / test artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -152,8 +145,8 @@ jobs:
     needs: [ios-main]
     steps:
       - uses: actions/checkout@v4
-      - name: Select Xcode 16
-        run: sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer || sudo xcode-select -p
+      - name: Select latest Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer || sudo xcode-select -p
       - name: Install xcodegen
         run: |
           if ! command -v xcodegen >/dev/null 2>&1; then
@@ -173,8 +166,8 @@ jobs:
     needs: [ios-main]
     steps:
       - uses: actions/checkout@v4
-      - name: Select Xcode 16
-        run: sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer || sudo xcode-select -p
+      - name: Select latest Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer || sudo xcode-select -p
       - name: Install xcodegen
         run: |
           if ! command -v xcodegen >/dev/null 2>&1; then

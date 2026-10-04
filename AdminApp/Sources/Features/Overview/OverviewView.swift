@@ -20,11 +20,13 @@ struct OverviewView: View {
     var body: some View {
         NavigationStack {
             List {
+
                 Section("Server") {
                     ServerStatusRow()
                 }
                 Section("Stat cards") {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+
                         ForEach(metrics, id: \.title) { metric in
                             VStack(alignment: .leading, spacing: 4) {
                                 Label(metric.title, systemImage: metric.icon)
@@ -54,7 +56,9 @@ struct OverviewView: View {
                 }
             }
             .navigationTitle("Overview")
+            .accessibilityIdentifier("admin.overview")
         }
+        .accessibilityIdentifier("admin.overview.metrics")
     }
 }
 
