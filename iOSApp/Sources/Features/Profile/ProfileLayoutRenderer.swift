@@ -108,7 +108,10 @@ struct ProfileLayoutRenderer: View {
                             // Frame-награда: золотое кольцо за rank Gold+.
                             Circle()
                                 .strokeBorder(
-                                    LinearGradient(colors: [.yellow, .orange]),
+                                    LinearGradient(
+                                        colors: [.yellow, .orange],
+                                        startPoint: .topLeading, endPoint: .bottomTrailing
+                                    ),
                                     lineWidth: PlayerRank.rank(forXP: xp) == .gold ? 4 : 2
                                 )
                         }

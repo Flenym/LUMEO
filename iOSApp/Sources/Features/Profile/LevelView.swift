@@ -27,7 +27,10 @@ struct LevelView: View {
                     Circle()
                         .trim(from: 0, to: progress)
                         .stroke(
-                            LinearGradient(colors: [theme.current.primary, theme.current.secondary]),
+                            LinearGradient(
+                                colors: [theme.current.primary, theme.current.secondary],
+                                startPoint: .topLeading, endPoint: .bottomTrailing
+                            ),
                             style: StrokeStyle(lineWidth: 10, lineCap: .round)
                         )
                         .frame(width: 76, height: 76)
