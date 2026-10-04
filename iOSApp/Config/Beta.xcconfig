@@ -1,0 +1,7 @@
+// Lumeo — Beta xcconfig (CloudPub tunnel).
+// Заменить реальным CloudPub доменом, не хардкодить:
+// после `cloudpub http 5267` вписать выданный https://XXXX.cloudpub.ru сюда (или через env),
+// в коде и Info.plist URL только как $(API_BASE_URL).
+API_BASE_URL = https://REAL-CLOUDPUB-DOMAIN.cloudpub.ru
+WS_BASE_URL = wss://REAL-CLOUDPUB-DOMAIN.cloudpub.ru/ws
+EMBER_CURRENCY_NAME = EMBER

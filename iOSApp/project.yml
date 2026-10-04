@@ -1,0 +1,100 @@
+# Lumeo — XcodeGen project (main app).
+# Generated project: run `xcodegen generate` inside iOSApp/ (CI installs xcodegen via brew).
+# NEVER hardcode API URLs in code — they come from Config/*.xcconfig via
+# Info.plist keys APIBaseURL / WSBaseURL / EmberCurrencyName.
+name: Lumeo
+options:
+  bundleIdPrefix: com.lumeo.app
+  deploymentTarget:
+    iOS: "26.0"
+  xcodeVersion: "16.0"
+  createIntermediateGroups: true
+
+configs:
+  Development: debug
+  Beta: release
+  Production: release
+
+configFiles:
+  Development: Config/Development.xcconfig
+  Beta: Config/Beta.xcconfig
+  Production: Config/Production.xcconfig
+
+settings:
+  CODE_SIGNING_ALLOWED: NO
+  MARKETING_VERSION: "0.1.0"
+  CURRENT_PROJECT_VERSION: "1"
+  SWIFT_VERSION: "6.0"
+
+targets:
+  LumeoApp:
+    type: application
+    platform: iOS
+    deploymentTarget: "26.0"
+    bundleId: com.lumeo.app
+    sources:
+      - path: Sources
+    info:
+      properties:
+        CFBundleDisplayName: Lumeo
+        UILaunchScreen: {}
+        APIBaseURL: $(API_BASE_URL)
+        WSBaseURL: $(WS_BASE_URL)
+        EmberCurrencyName: $(EMBER_CURRENCY_NAME)
+    settings:
+      CODE_SIGNING_ALLOWED: NO
+      PRODUCT_BUNDLE_IDENTIFIER: com.lumeo.app
+      INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+    dependencies:
+      - target: LumeoWidgets
+      - target: LumeoLiveActivity
+
+  LumeoWidgets:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "26.0"
+    bundleId: com.lumeo.app.widgets
+    sources:
+      - path: Widgets
+    settings:
+      CODE_SIGNING_ALLOWED: NO
+      PRODUCT_BUNDLE_IDENTIFIER: com.lumeo.app.widgets
+
+  LumeoLiveActivity:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "26.0"
+    bundleId: com.lumeo.app.liveactivity
+    sources:
+      - path: LiveActivities
+    settings:
+      CODE_SIGNING_ALLOWED: NO
+      PRODUCT_BUNDLE_IDENTIFIER: com.lumeo.app.liveactivity
+
+  LumeoTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "26.0"
+    bundleId: com.lumeo.app.tests
+    sources:
+      - path: Tests
+      - path: UITests
+    settings:
+      CODE_SIGNING_ALLOWED: NO
+      PRODUCT_BUNDLE_IDENTIFIER: com.lumeo.app.tests
+    dependencies:
+      - target: LumeoApp
+
+schemes:
+  Lumeo:
+    build:
+      targets:
+        LumeoApp: all
+    run:
+      config: Development
+    test:
+      config: Development
+      targets:
+        - LumeoTests
+    archive:
+      config: Production

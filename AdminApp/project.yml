@@ -1,0 +1,86 @@
+# LumeoAdmin — XcodeGen project (admin app, separate bundle).
+# Generated project: run `xcodegen generate` inside AdminApp/ (CI installs xcodegen via brew).
+# Admin API base URL lives in per-config settings below — never hardcoded in code.
+# (Shared Config/*.xcconfig live in iOSApp/Config; AdminApp keeps inline values
+# so this directory contains only project.yml besides Sources/Tests/UITests.)
+name: LumeoAdmin
+options:
+  bundleIdPrefix: com.lumeo.admin
+  deploymentTarget:
+    iOS: "26.0"
+  xcodeVersion: "16.0"
+  createIntermediateGroups: true
+
+configs:
+  Development: debug
+  Beta: release
+  Production: release
+
+settings:
+  CODE_SIGNING_ALLOWED: NO
+  MARKETING_VERSION: "0.1.0"
+  CURRENT_PROJECT_VERSION: "1"
+  SWIFT_VERSION: "6.0"
+  configs:
+    Development:
+      API_BASE_URL: http://localhost:5267
+      WS_BASE_URL: ws://localhost:5267/ws
+      EMBER_CURRENCY_NAME: EMBER
+    Beta:
+      # Заменить реальным CloudPub доменом, не хардкодить (см. iOSApp/Config/Beta.xcconfig).
+      API_BASE_URL: https://REAL-CLOUDPUB-DOMAIN.cloudpub.ru
+      WS_BASE_URL: wss://REAL-CLOUDPUB-DOMAIN.cloudpub.ru/ws
+      EMBER_CURRENCY_NAME: EMBER
+    Production:
+      # Заменить реальным CloudPub доменом, не хардкодить (см. iOSApp/Config/Production.xcconfig).
+      API_BASE_URL: https://REAL-CLOUDPUB-DOMAIN.cloudpub.ru
+      WS_BASE_URL: wss://REAL-CLOUDPUB-DOMAIN.cloudpub.ru/ws
+      EMBER_CURRENCY_NAME: EMBER
+
+targets:
+  LumeoAdmin:
+    type: application
+    platform: iOS
+    deploymentTarget: "26.0"
+    bundleId: com.lumeo.admin
+    sources:
+      - path: Sources
+    info:
+      properties:
+        CFBundleDisplayName: Lumeo Admin
+        UILaunchScreen: {}
+        APIBaseURL: $(API_BASE_URL)
+        WSBaseURL: $(WS_BASE_URL)
+        EmberCurrencyName: $(EMBER_CURRENCY_NAME)
+    settings:
+      CODE_SIGNING_ALLOWED: NO
+      PRODUCT_BUNDLE_IDENTIFIER: com.lumeo.admin
+    dependencies: []
+
+  LumeoAdminTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "26.0"
+    bundleId: com.lumeo.admin.tests
+    sources:
+      - path: Tests
+      - path: UITests
+    settings:
+      CODE_SIGNING_ALLOWED: NO
+      PRODUCT_BUNDLE_IDENTIFIER: com.lumeo.admin.tests
+    dependencies:
+      - target: LumeoAdmin
+
+schemes:
+  LumeoAdmin:
+    build:
+      targets:
+        LumeoAdmin: all
+    run:
+      config: Development
+    test:
+      config: Development
+      targets:
+        - LumeoAdminTests
+    archive:
+      config: Production

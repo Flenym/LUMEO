@@ -1,0 +1,186 @@
+// Lumeo Admin — Sources/Features/Users/UsersView.swift
+// Пользователи: search / profile / status / badges / level / currency /
+// inventory / ban / mute / verify / grant. Audit на каждое действие.
+// Plaintext сообщений НЕ отображается (только metadata из Moderation).
+
+import SwiftUI
+
+// MARK: - AdminUser
+
+struct AdminUser: Identifiable, Hashable {
+    var id: UUID = UUID()
+    var username: String
+    var status: String
+    var badges: [String]
+    var level: Int
+    var ember: Int
+    var inventoryCount: Int
+    var isBanned: Bool
+    var isMuted: Bool
+    var isVerified: Bool
+}
+
+// MARK: - UsersView
+
+struct UsersView: View {
+    @State private var users: [AdminUser] = [
+        AdminUser(username: "neo", status: "online", badges: ["verified"], level: 12, ember: 1250, inventoryCount: 8, isBanned: false, isMuted: false, isVerified: true),
+        AdminUser(username: "mira", status: "in session", badges: ["sponsor"], level: 9, ember: 640, inventoryCount: 5, isBanned: false, isMuted: false, isVerified: false),
+        AdminUser(username: "dex", status: "offline", badges: [], level: 4, ember: 120, inventoryCount: 2, isBanned: false, isMuted: true, isVerified: false),
+        AdminUser(username: "spam1", status: "offline", badges: [], level: 1, ember: 0, inventoryCount: 0, isBanned: true, isMuted: true, isVerified: false),
+    ]
+    @State private var query = ""
+    @State private var selected: AdminUser?
+    @State private var grantAmount = "500"
+    @State private var audit: [AuditLogEntry] = AdminPreviewData.audit
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Users") {
+                    ForEach(visible) { user in
+                        Button {
+                            selected = user
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    HStack(spacing: 4) {
+                                        Text("@\(user.username)").bold()
+                                        if user.isVerified {
+                                            Image(systemName: "checkmark.seal.fill")
+                                                .foregroundStyle(.blue)
+                                                .font(.caption)
+                                        }
+                                    }
+                                    Text(user.isBanned ? "banned" : user.status)
+                                        .font(.caption)
+                                        .foregroundStyle(user.isBanned ? .red : .secondary)
+                                    Text("Lv \(user.level) · \(user.ember) EMBER · \(user.inventoryCount) items")
+                                        .font(.caption.monospacedDigit())
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                Section("Audit") {
+                    Text(EconomyGrant.canonicalExample)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                    ForEach(audit) { AuditRow(entry: $0) }
+                }
+            }
+            .navigationTitle("Users")
+            .searchable(text: $query, prompt: "Search username")
+            .sheet(item: $selected) { user in
+                UserDetailSheet(
+                    user: user,
+                    grantAmount: $grantAmount,
+                    onAction: { action, amount in applyAction(user: user, action: action, amount: amount) }
+                )
+            }
+        }
+    }
+
+    private var visible: [AdminUser] {
+        guard !query.isEmpty else { return users }
+        return users.filter { $0.username.localizedCaseInsensitiveContains(query) }
+    }
+
+    private func applyAction(user: AdminUser, action: String, amount: Int = 0) {
+        guard let i = users.firstIndex(where: { $0.id == user.id }) else { return }
+        switch action {
+        case "ban": users[i].isBanned = true
+        case "unban": users[i].isBanned = false
+        case "mute": users[i].isMuted = true
+        case "unmute": users[i].isMuted = false
+        case "verify": users[i].isVerified = true
+        case "grant":
+            users[i].ember += amount
+            let line = EconomyGrant.auditLine(admin: "admin:this-device", amount: amount, target: user.username)
+            audit.insert(AuditLogEntry(at: .now, actor: "admin:this-device", action: line, target: "user:\(user.username)"), at: 0)
+            return
+        default: break
+        }
+        audit.insert(
+            AuditLogEntry(at: .now, actor: "admin:this-device", action: action, target: "user:\(user.username)"),
+            at: 0
+        )
+        // TODO(backend): POST /api/v1/admin/users/{id}/{ban|mute|verify|grant}.
+    }
+}
+
+// MARK: - UserDetailSheet (profile/status/badges/level/currency/inventory/...)
+
+struct UserDetailSheet: View {
+    var user: AdminUser
+    @Binding var grantAmount: String
+    var onAction: (String, Int) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Profile") {
+                    MetricRow(title: "Username", value: "@\(user.username)")
+                    MetricRow(title: "Status", value: user.status)
+                    MetricRow(title: "Badges", value: user.badges.joined(separator: ", ").isEmpty ? "—" : user.badges.joined(separator: ", "))
+                    MetricRow(title: "Level", value: "\(user.level)")
+                    MetricRow(title: "EMBER", value: "\(user.ember)")
+                    MetricRow(title: "Inventory", value: "\(user.inventoryCount) items")
+                }
+                Section("Grant EMBER") {
+                    HStack {
+                        TextField("500", text: $grantAmount)
+                            .keyboardType(.numberPad)
+                        Button("Grant") {
+                            onAction("grant", Int(grantAmount) ?? 500)
+                            dismiss()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.orange)
+                        .controlSize(.small)
+                    }
+                    Text(EconomyGrant.canonicalExample)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                }
+                Section("Actions") {
+                    HStack {
+                        Button(user.isBanned ? "Unban" : "Ban") {
+                            onAction(user.isBanned ? "unban" : "ban", 0)
+                            dismiss()
+                        }
+                        .buttonStyle(.bordered).tint(user.isBanned ? .green : .red).controlSize(.small)
+                        Button(user.isMuted ? "Unmute" : "Mute") {
+                            onAction(user.isMuted ? "unmute" : "mute", 0)
+                            dismiss()
+                        }
+                        .buttonStyle(.bordered).controlSize(.small)
+                        Button("Verify") {
+                            onAction("verify", 0)
+                            dismiss()
+                        }
+                        .buttonStyle(.borderedProminent).tint(.blue).controlSize(.small)
+                    }
+                }
+            }
+            .navigationTitle("@\(user.username)")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+#Preview {
+    UsersView()
+        .preferredColorScheme(.dark)
+}

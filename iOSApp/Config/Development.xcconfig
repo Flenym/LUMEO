@@ -1,0 +1,5 @@
+// Lumeo — Development xcconfig (local dev).
+// Backend on localhost:5267, no TLS. Simulator-friendly (no ATS exception needed for localhost).
+API_BASE_URL = http://localhost:5267
+WS_BASE_URL = ws://localhost:5267/ws
+EMBER_CURRENCY_NAME = EMBER
