@@ -240,4 +240,3 @@ enum AdminPreviewData {
     /// Каноническая audit-строка гранта (показывается во всех табах).
     static let grantExample = EconomyGrant.canonicalExample
 }
-}

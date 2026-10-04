@@ -228,6 +228,7 @@ struct UserDetailSheet: View {
         }
     }
 }
+}
 
 #Preview {
     UsersView()
