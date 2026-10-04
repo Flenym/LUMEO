@@ -28,7 +28,7 @@ enum DeepLinkStore {
 // MARK: - Status intents (3)
 
 struct SetGreenIntent: AppIntent {
-    static var title: LocalizedStringResource = "Set status: Free"
+    static let title: LocalizedStringResource = "Set status: Free"
     static var description = IntentDescription("Поставить статус 🟢 Свободен.")
     static var openAppWhenRun: Bool { false }
 
@@ -40,7 +40,7 @@ struct SetGreenIntent: AppIntent {
 }
 
 struct SetYellowIntent: AppIntent {
-    static var title: LocalizedStringResource = "Set status: Later"
+    static let title: LocalizedStringResource = "Set status: Later"
     static var description = IntentDescription("Поставить статус 🟡 Буду позже.")
     static var openAppWhenRun: Bool { false }
 
@@ -51,7 +51,7 @@ struct SetYellowIntent: AppIntent {
 }
 
 struct SetRedIntent: AppIntent {
-    static var title: LocalizedStringResource = "Set status: Busy"
+    static let title: LocalizedStringResource = "Set status: Busy"
     static var description = IntentDescription("Поставить статус 🔴 Занят.")
     static var openAppWhenRun: Bool { false }
 
@@ -64,7 +64,7 @@ struct SetRedIntent: AppIntent {
 // MARK: - Open section intents (3)
 
 struct OpenFriendsIntent: AppIntent {
-    static var title: LocalizedStringResource = "Open Friends"
+    static let title: LocalizedStringResource = "Open Friends"
     static var description = IntentDescription("Открыть раздел Друзья в Lumeo.")
     static var openAppWhenRun: Bool { true }
 
@@ -75,7 +75,7 @@ struct OpenFriendsIntent: AppIntent {
 }
 
 struct OpenChatsIntent: AppIntent {
-    static var title: LocalizedStringResource = "Open Chats"
+    static let title: LocalizedStringResource = "Open Chats"
     static var description = IntentDescription("Открыть раздел Чаты в Lumeo.")
     static var openAppWhenRun: Bool { true }
 
@@ -86,7 +86,7 @@ struct OpenChatsIntent: AppIntent {
 }
 
 struct OpenProfileIntent: AppIntent {
-    static var title: LocalizedStringResource = "Open Profile"
+    static let title: LocalizedStringResource = "Open Profile"
     static var description = IntentDescription("Открыть Профиль в Lumeo.")
     static var openAppWhenRun: Bool { true }
 
@@ -99,7 +99,7 @@ struct OpenProfileIntent: AppIntent {
 // MARK: - Session intents (4)
 
 struct CreateSessionIntent: AppIntent {
-    static var title: LocalizedStringResource = "Create Session"
+    static let title: LocalizedStringResource = "Create Session"
     static var description = IntentDescription("Создать Session «Поиграем?» в Lumeo.")
     static var openAppWhenRun: Bool { true }
 
@@ -110,7 +110,7 @@ struct CreateSessionIntent: AppIntent {
 }
 
 struct OpenActiveSessionIntent: AppIntent {
-    static var title: LocalizedStringResource = "Open Active Session"
+    static let title: LocalizedStringResource = "Open Active Session"
     static var description = IntentDescription("Открыть активную Session.")
     static var openAppWhenRun: Bool { true }
 
@@ -121,7 +121,7 @@ struct OpenActiveSessionIntent: AppIntent {
 }
 
 struct JoinSessionIntent: AppIntent {
-    static var title: LocalizedStringResource = "Join Session"
+    static let title: LocalizedStringResource = "Join Session"
     static var description = IntentDescription("Войти в активную Session.")
     static var openAppWhenRun: Bool { false }
 
@@ -133,7 +133,7 @@ struct JoinSessionIntent: AppIntent {
 }
 
 struct LeaveSessionIntent: AppIntent {
-    static var title: LocalizedStringResource = "Leave Session"
+    static let title: LocalizedStringResource = "Leave Session"
     static var description = IntentDescription("Выйти из активной Session.")
     static var openAppWhenRun: Bool { false }
 

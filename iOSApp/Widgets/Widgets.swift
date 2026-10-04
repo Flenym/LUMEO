@@ -22,8 +22,8 @@ struct FriendsEntry: TimelineEntry {
 
 /// Выбор squad для виджета «Мой Squad» (intent-configuration).
 struct SquadSelectionIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource = "Choose squad"
-    static var description = IntentDescription("Выбрать сквад для виджета.")
+    static let title: LocalizedStringResource = "Choose squad"
+    static let description = IntentDescription("Выбрать сквад для виджета.")
 
     @Parameter(title: "Squad")
     var squadName: String?
@@ -79,7 +79,7 @@ struct FriendsProvider: TimelineProvider {
 // MARK: - Widget intents (кнопки статуса — работают через AppIntent)
 
 struct WidgetSetGreenIntent: AppIntent {
-    static var title: LocalizedStringResource = "Set status: Free"
+    static let title: LocalizedStringResource = "Set status: Free"
     static var openAppWhenRun: Bool { false }
 
     func perform() async throws -> some IntentResult {
@@ -89,7 +89,7 @@ struct WidgetSetGreenIntent: AppIntent {
 }
 
 struct WidgetSetYellowIntent: AppIntent {
-    static var title: LocalizedStringResource = "Set status: Later"
+    static let title: LocalizedStringResource = "Set status: Later"
     static var openAppWhenRun: Bool { false }
 
     func perform() async throws -> some IntentResult {
@@ -99,7 +99,7 @@ struct WidgetSetYellowIntent: AppIntent {
 }
 
 struct WidgetSetRedIntent: AppIntent {
-    static var title: LocalizedStringResource = "Set status: Busy"
+    static let title: LocalizedStringResource = "Set status: Busy"
     static var openAppWhenRun: Bool { false }
 
     func perform() async throws -> some IntentResult {
