@@ -122,6 +122,14 @@ jobs:
             -destination 'platform=iOS Simulator,name=iPhone 17' \
             -derivedDataPath DerivedData \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+      - name: Debug appex Info.plist (ground truth for sim install)
+        if: always()
+        run: |
+          find DerivedData/Build/Products/Development-iphonesimulator -maxdepth 3 -name "*.appex" | head -5 || true
+          for APP in DerivedData/Build/Products/Development-iphonesimulator/*.app/PlugIns/*.appex; do
+            echo "== $APP/Info.plist"
+            plutil -p "$APP/Info.plist" 2>&1 | head -40 || echo "(no Info.plist)"
+          done
       - name: Test unit + UI (engines/rules + 7 critical flows)
         run: |
           xcodebuild test-without-building \
