@@ -61,6 +61,9 @@ targets:
     settings:
       CODE_SIGNING_ALLOWED: NO
       PRODUCT_BUNDLE_IDENTIFIER: com.lumeo.app.widgets
+      # Дублируем NSExtension через build settings: симулятор требует
+      # extensionDictionary в установленном appex (иначе Invalid placeholder attributes).
+      INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier: com.apple.widgetkit-extension
 
   LumeoLiveActivity:
     type: app-extension
@@ -80,6 +83,7 @@ targets:
     settings:
       CODE_SIGNING_ALLOWED: NO
       PRODUCT_BUNDLE_IDENTIFIER: com.lumeo.app.liveactivity
+      INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier: com.apple.widgetkit-extension
 
   LumeoTests:
     type: bundle.unit-test
