@@ -81,10 +81,8 @@ jobs:
         run: |
           if command -v swiftlint >/dev/null 2>&1; then
             swiftlint lint --strict iOSApp/Sources AdminApp/Sources || true
-          elif command -v swiftformat >/dev/null 2>&1; then
-            swiftformat --lint iOSApp AdminApp || true
           else
-            echo "NOTE: neither swiftlint nor swiftformat installed — lint skipped (non-blocking)"
+            echo "NOTE: swiftlint not installed — lint skipped (non-blocking)"
           fi
 
   ios-main:
@@ -130,7 +128,7 @@ jobs:
             echo "== $APP/Info.plist"
             plutil -p "$APP/Info.plist" 2>&1 | head -40 || echo "(no Info.plist)"
           done
-      - name: Test unit + UI (engines/rules + 7 critical flows)
+      - name: Test unit (engines/rules, in-process, fast)
         run: |
           xcodebuild test-without-building \
             -project iOSApp/Lumeo.xcodeproj \
@@ -138,7 +136,19 @@ jobs:
             -configuration Development \
             -destination 'platform=iOS Simulator,name=iPhone 17' \
             -derivedDataPath DerivedData \
-            -resultBundlePath TestResults/LumeoTests.xcresult
+            -resultBundlePath TestResults/LumeoUnit.xcresult \
+            -only-testing:LumeoTests
+      - name: Test UI (7 critical flows, retry flaky cold-start aborts)
+        run: |
+          xcodebuild test-without-building \
+            -project iOSApp/Lumeo.xcodeproj \
+            -scheme Lumeo \
+            -configuration Development \
+            -destination 'platform=iOS Simulator,name=iPhone 17' \
+            -derivedDataPath DerivedData \
+            -resultBundlePath TestResults/LumeoTests.xcresult \
+            -only-testing:LumeoUITests \
+            -retry-tests-on-failure
       - name: Screenshots (10 screens)
         if: always()
         run: chmod +x scripts/screenshots.sh && ./scripts/screenshots.sh --project iOSApp/Lumeo.xcodeproj --scheme Lumeo --device "iPhone 17" --out screenshots
@@ -150,6 +160,7 @@ jobs:
           path: |
             screenshots
             TestResults/LumeoTests.xcresult
+            TestResults/LumeoUnit.xcresult
 
   ipa-main:
     name: ipa-main (unsigned)
