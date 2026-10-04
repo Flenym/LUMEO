@@ -50,8 +50,16 @@ final class WebSocketService {
 
     func connect() {
         guard state == .disconnected else { return }
+        // ВАЖНО: URLSession.webSocketTask бросает NSException (не ловится в Swift),
+        // если схема не ws/wss. Проверяем заранее — иначе краш всего приложения.
+        // Заодно не дублируем /ws, если конфиг уже содержит путь (Development/Beta/Prod).
+        let base = AppConfig.wsBaseURL
+        guard base.scheme == "ws" || base.scheme == "wss" else {
+            state = .fallbackPolling
+            return
+        }
+        let url = base.pathComponents.contains("ws") ? base : base.appending(path: "ws")
         state = .connecting
-        let url = AppConfig.wsBaseURL.appending(path: "ws")
         let task = URLSession.shared.webSocketTask(with: url)
         self.task = task
         task.resume()
