@@ -28,17 +28,14 @@ struct UsersView: View {
         AdminUser(username: "mira", status: "in session", badges: ["sponsor"], level: 9, ember: 640, inventoryCount: 5, isBanned: false, isMuted: false, isVerified: false),
         AdminUser(username: "dex", status: "offline", badges: [], level: 4, ember: 120, inventoryCount: 2, isBanned: false, isMuted: true, isVerified: false),
         AdminUser(username: "spam1", status: "offline", badges: [], level: 1, ember: 0, inventoryCount: 0, isBanned: true, isMuted: true, isVerified: false),
-        // Стаб для AdminUITests: поиск "reported_user" всегда находит жалобу.
         AdminUser(username: "reported_user", status: "reported", badges: [], level: 2, ember: 40, inventoryCount: 1, isBanned: false, isMuted: false, isVerified: false),
     ]
     @State private var query = ""
     @State private var selected: AdminUser?
     @State private var grantAmount = "500"
     @State private var audit: [AuditLogEntry] = AdminPreviewData.audit
-    /// Баннер последнего бана (AdminUITests: admin.user.banned).
     @State private var justBanned: String?
 
-    /// UITesting-режим админки (тот же флаг, что у Main App).
     private var isUITesting: Bool {
         CommandLine.arguments.contains("--uitesting")
     }
@@ -46,8 +43,6 @@ struct UsersView: View {
     var body: some View {
         NavigationStack {
             List {
-                // UITesting-поиск: .searchable не отдаёт идентификатор,
-                // поэтому в тестах — явный TextField с тем же query.
                 if isUITesting {
                     Section("Search") {
                         TextField("Search username", text: $query)
@@ -67,32 +62,11 @@ struct UsersView: View {
                         Button {
                             selected = user
                         } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    HStack(spacing: 4) {
-                                        Text("@\(user.username)").bold()
-                                        if user.isVerified {
-                                            Image(systemName: "checkmark.seal.fill")
-                                                .foregroundStyle(.blue)
-                                                .font(.caption)
-                                        }
-                                    }
-                                    Text(user.isBanned ? "banned" : user.status)
-                                        .font(.caption)
-                                        .foregroundStyle(user.isBanned ? .red : .secondary)
-                                    Text("Lv \(user.level) · \(user.ember) EMBER · \(user.inventoryCount) items")
-                                        .font(.caption.monospacedDigit())
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .foregroundStyle(.secondary)
-                            }
+                            userRowLabel(user)
                         }
                         .buttonStyle(.plain)
-                        .accessibilityIdentifier(
-                            user.username == "reported_user" ? "admin.users.row" : "admin.users.row.\(user.username)"
-                        )
+                        .accessibilityIdentifier(user.username == "reported_user" ? "admin.users.row" : "admin.users.row.\(user.username)")
+                    }
                 }
                 Section("Audit") {
                     Text(EconomyGrant.canonicalExample)
@@ -113,6 +87,30 @@ struct UsersView: View {
         }
     }
 
+    private func userRowLabel(_ user: AdminUser) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 4) {
+                    Text("@\(user.username)").bold()
+                    if user.isVerified {
+                        Image(systemName: "checkmark.seal.fill")
+                            .foregroundStyle(.blue)
+                            .font(.caption)
+                    }
+                }
+                Text(user.isBanned ? "banned" : user.status)
+                    .font(.caption)
+                    .foregroundStyle(user.isBanned ? .red : .secondary)
+                Text("Lv \(user.level) · \(user.ember) EMBER · \(user.inventoryCount) items")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Image(systemName: "chevron.right")
+                .foregroundStyle(.secondary)
+        }
+    }
+
     private var visible: [AdminUser] {
         guard !query.isEmpty else { return users }
         return users.filter { $0.username.localizedCaseInsensitiveContains(query) }
@@ -124,23 +122,26 @@ struct UsersView: View {
         case "ban":
             users[i].isBanned = true
             justBanned = user.username
-        case "unban": users[i].isBanned = false
-        case "mute": users[i].isMuted = true
-        case "unmute": users[i].isMuted = false
-        case "verify": users[i].isVerified = true
+        case "unban":
+            users[i].isBanned = false
+        case "mute":
+            users[i].isMuted = true
+        case "unmute":
+            users[i].isMuted = false
+        case "verify":
+            users[i].isVerified = true
         case "grant":
             users[i].ember += amount
             let line = EconomyGrant.auditLine(admin: "admin:this-device", amount: amount, target: user.username)
             audit.insert(AuditLogEntry(at: .now, actor: "admin:this-device", action: line, target: "user:\(user.username)"), at: 0)
             AdminAuditLog.shared.append(actor: "admin:this-device", action: line, target: "user:\(user.username)")
             return
-        default: break
+        default:
+            break
         }
         let entry = AuditLogEntry(at: .now, actor: "admin:this-device", action: action, target: "user:\(user.username)")
         audit.insert(entry, at: 0)
-        // Общий лог для Audit-таба (AdminUITests: admin.audit.banEntry).
         AdminAuditLog.shared.append(actor: entry.actor, action: entry.action, target: entry.target)
-        // TODO(backend): POST /api/v1/admin/users/{id}/{ban|mute|verify|grant}.
     }
 }
 
@@ -151,7 +152,6 @@ struct UserDetailSheet: View {
     @Binding var grantAmount: String
     var onAction: (String, Int) -> Void
     @Environment(\.dismiss) private var dismiss
-    /// Двухшаговый бан (AdminUITests: ban → reason → confirm).
     @State private var banArmed = false
     @State private var banReason = ""
 
@@ -205,7 +205,6 @@ struct UserDetailSheet: View {
                         }
                         .buttonStyle(.borderedProminent).tint(.blue).controlSize(.small)
                     }
-                    // Подтверждение бана с причиной (reason опциональна для UITests).
                     if banArmed && !user.isBanned {
                         TextField("Reason", text: $banReason)
                             .accessibilityIdentifier("admin.user.ban.reason")
@@ -227,7 +226,6 @@ struct UserDetailSheet: View {
             }
         }
     }
-}
 }
 
 #Preview {
