@@ -11,7 +11,9 @@ import XCTest
 final class AdminUITests: XCTestCase {
     var app: XCUIApplication!
 
-    override func setUpWithError() throws {
+    /// Async setUp: см. комментарий в LumeoUITests (MainActor + Swift 6).
+    override func setUp() async throws {
+        try await super.setUp()
         continueAfterFailure = false
         app = XCUIApplication()
         app.launchArguments = ["--uitesting", "--reset-state"]
