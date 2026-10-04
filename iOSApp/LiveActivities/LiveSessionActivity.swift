@@ -100,12 +100,13 @@ enum LiveSessionStarter {
     }
 
     /// Апдейт: слоты / состояние / таймер (вызывать на каждое изменение Session).
+    /// Типы указаны явно: `.init`-сокращения без контекста ломают инференс (Xcode 26).
     static func update(slotsTaken: Int, state: String, endsAt: Date? = nil) async {
         for activity in Activity<LiveSessionAttributes>.activities {
-            let content = ActivityContent(
-                state: .init(slotsTaken: slotsTaken, state: state, endsAt: endsAt),
-                staleDate: nil
+            let contentState = LiveSessionAttributes.ContentState(
+                slotsTaken: slotsTaken, state: state, endsAt: endsAt
             )
+            let content = ActivityContent(state: contentState, staleDate: nil)
             await activity.update(content)
         }
     }
@@ -113,11 +114,11 @@ enum LiveSessionStarter {
     /// Конец: штатное завершение (Finished/Cancelled) — с финальным состоянием.
     static func end(state: String = "finished") async {
         for activity in Activity<LiveSessionAttributes>.activities {
-            let final = ActivityContent(
-                state: .init(slotsTaken: 0, state: state, endsAt: nil),
-                staleDate: nil
+            let contentState = LiveSessionAttributes.ContentState(
+                slotsTaken: 0, state: state, endsAt: nil
             )
-            await activity.end(final, dismissalPolicy: .after(.now + 5))
+            let final = ActivityContent(state: contentState, staleDate: nil)
+            await activity.end(final, dismissalPolicy: .immediate)
         }
     }
 
