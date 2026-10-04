@@ -65,6 +65,8 @@ struct QueuedRequest: Codable, Identifiable {
 // MARK: - APIClient
 
 /// HTTP-клиент Tier1. Один инстанс (shared), состояние очереди — @Observable для индикатора.
+/// Изоляция MainActor: все вызовы идут из SwiftUI (Swift 6 concurrency-safe).
+@MainActor
 @Observable
 final class APIClient {
     static let shared = APIClient()

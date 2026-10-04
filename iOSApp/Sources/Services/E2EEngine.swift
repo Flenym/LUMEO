@@ -121,7 +121,9 @@ enum E2EKeychainStore {
 /// Фасад E2EE для фич чатов. До подключения проверенного стека все операции бросают .notConfigured,
 /// и чаты работают в незашифрованном dev-режиме (помечается в UI точкой «не защищено»).
 enum E2EEngine {
-    static var provider: (any E2ECryptoProvider)?
+    /// Провайдер ставится один раз при старте (DI). nonisolated(unsafe):
+    /// запись — только на старте, чтение — везде (Swift 6 escape hatch).
+    nonisolated(unsafe) static var provider: (any E2ECryptoProvider)?
 
     static var isAvailable: Bool { provider != nil }
 

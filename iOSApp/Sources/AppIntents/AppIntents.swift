@@ -29,7 +29,7 @@ enum DeepLinkStore {
 
 struct SetGreenIntent: AppIntent {
     static let title: LocalizedStringResource = "Set status: Free"
-    static var description = IntentDescription("Поставить статус 🟢 Свободен.")
+    static let description = IntentDescription("Поставить статус 🟢 Свободен.")
     static var openAppWhenRun: Bool { false }
 
     func perform() async throws -> some IntentResult {
@@ -41,7 +41,7 @@ struct SetGreenIntent: AppIntent {
 
 struct SetYellowIntent: AppIntent {
     static let title: LocalizedStringResource = "Set status: Later"
-    static var description = IntentDescription("Поставить статус 🟡 Буду позже.")
+    static let description = IntentDescription("Поставить статус 🟡 Буду позже.")
     static var openAppWhenRun: Bool { false }
 
     func perform() async throws -> some IntentResult {
@@ -52,7 +52,7 @@ struct SetYellowIntent: AppIntent {
 
 struct SetRedIntent: AppIntent {
     static let title: LocalizedStringResource = "Set status: Busy"
-    static var description = IntentDescription("Поставить статус 🔴 Занят.")
+    static let description = IntentDescription("Поставить статус 🔴 Занят.")
     static var openAppWhenRun: Bool { false }
 
     func perform() async throws -> some IntentResult {
@@ -65,7 +65,7 @@ struct SetRedIntent: AppIntent {
 
 struct OpenFriendsIntent: AppIntent {
     static let title: LocalizedStringResource = "Open Friends"
-    static var description = IntentDescription("Открыть раздел Друзья в Lumeo.")
+    static let description = IntentDescription("Открыть раздел Друзья в Lumeo.")
     static var openAppWhenRun: Bool { true }
 
     func perform() async throws -> some IntentResult {
@@ -76,7 +76,7 @@ struct OpenFriendsIntent: AppIntent {
 
 struct OpenChatsIntent: AppIntent {
     static let title: LocalizedStringResource = "Open Chats"
-    static var description = IntentDescription("Открыть раздел Чаты в Lumeo.")
+    static let description = IntentDescription("Открыть раздел Чаты в Lumeo.")
     static var openAppWhenRun: Bool { true }
 
     func perform() async throws -> some IntentResult {
@@ -87,7 +87,7 @@ struct OpenChatsIntent: AppIntent {
 
 struct OpenProfileIntent: AppIntent {
     static let title: LocalizedStringResource = "Open Profile"
-    static var description = IntentDescription("Открыть Профиль в Lumeo.")
+    static let description = IntentDescription("Открыть Профиль в Lumeo.")
     static var openAppWhenRun: Bool { true }
 
     func perform() async throws -> some IntentResult {
@@ -100,7 +100,7 @@ struct OpenProfileIntent: AppIntent {
 
 struct CreateSessionIntent: AppIntent {
     static let title: LocalizedStringResource = "Create Session"
-    static var description = IntentDescription("Создать Session «Поиграем?» в Lumeo.")
+    static let description = IntentDescription("Создать Session «Поиграем?» в Lumeo.")
     static var openAppWhenRun: Bool { true }
 
     func perform() async throws -> some IntentResult {
@@ -111,7 +111,7 @@ struct CreateSessionIntent: AppIntent {
 
 struct OpenActiveSessionIntent: AppIntent {
     static let title: LocalizedStringResource = "Open Active Session"
-    static var description = IntentDescription("Открыть активную Session.")
+    static let description = IntentDescription("Открыть активную Session.")
     static var openAppWhenRun: Bool { true }
 
     func perform() async throws -> some IntentResult {
@@ -122,7 +122,7 @@ struct OpenActiveSessionIntent: AppIntent {
 
 struct JoinSessionIntent: AppIntent {
     static let title: LocalizedStringResource = "Join Session"
-    static var description = IntentDescription("Войти в активную Session.")
+    static let description = IntentDescription("Войти в активную Session.")
     static var openAppWhenRun: Bool { false }
 
     func perform() async throws -> some IntentResult {
@@ -134,7 +134,7 @@ struct JoinSessionIntent: AppIntent {
 
 struct LeaveSessionIntent: AppIntent {
     static let title: LocalizedStringResource = "Leave Session"
-    static var description = IntentDescription("Выйти из активной Session.")
+    static let description = IntentDescription("Выйти из активной Session.")
     static var openAppWhenRun: Bool { false }
 
     func perform() async throws -> some IntentResult {
