@@ -149,6 +149,12 @@ jobs:
             -resultBundlePath TestResults/LumeoTests.xcresult \
             -only-testing:LumeoUITests \
             -retry-tests-on-failure
+      - name: Sim crash log (who read ThemeManager without provider?)
+        if: failure()
+        run: |
+          UDID="$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin); print(next((x['udid'] for rt in d.get('devices',{}).values() for x in rt if x.get('name')=='iPhone 17'),''))")"
+          echo "SIM: $UDID"
+          xcrun simctl spawn "$UDID" log show --predicate 'process == "LumeoApp"' --info --last 10m 2>/dev/null | grep -B5 -A40 -i "fatal error" | head -100 || true
       - name: Screenshots (10 screens)
         if: always()
         run: chmod +x scripts/screenshots.sh && ./scripts/screenshots.sh --project iOSApp/Lumeo.xcodeproj --scheme Lumeo --device "iPhone 17" --out screenshots
