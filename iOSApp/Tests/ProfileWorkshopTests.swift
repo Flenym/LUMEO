@@ -69,7 +69,7 @@ final class ThemeResolverTests: XCTestCase {
         XCTAssertTrue(ThemeResolver.themeExists(named: "OLED Orange"))
         XCTAssertTrue(ThemeResolver.themeExists(named: "White Minimal"))
         XCTAssertFalse(ThemeResolver.themeExists(named: "Nope"))
-        XCTAssertEqual(AppTheme.officialTen.count, 10)
+        XCTAssertEqual(AppTheme.all.count, 10)
         XCTAssertEqual(ThemeResolver.resolve(named: "White Minimal").name, "White Minimal")
     }
 }
