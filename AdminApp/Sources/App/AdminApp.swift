@@ -61,24 +61,15 @@ struct AdminApp: App {
         WindowGroup {
             if session.isProvisioned {
                 TabView(selection: $selection) {
-                    Tab("Overview", systemImage: "gauge.with.dots.needle.67percent") { OverviewView() }
-                        .tag(0)
-                    Tab("Users", systemImage: "person.2") { UsersView() }
-                        .tag(1)
-                    Tab("Moderation", systemImage: "shield") { ModerationView() }
-                        .tag(2)
-                    Tab("Verification", systemImage: "checkmark.seal") { VerificationView() }
-                        .tag(3)
-                    Tab("Economy", systemImage: "coins") { EconomyView() }
-                        .tag(4)
-                    Tab("Content", systemImage: "photo.stack") { ContentView() }
-                        .tag(5)
-                    Tab("Analytics", systemImage: "chart.bar") { AnalyticsView() }
-                        .tag(6)
-                    Tab("Server", systemImage: "server.rack") { ServerView() }
-                        .tag(7)
-                    Tab("Audit", systemImage: "list.bullet.rectangle") { AuditView() }
-                        .tag(8)
+                    Tab("Overview", systemImage: "gauge.with.dots.needle.67percent", value: 0) { OverviewView() }
+                    Tab("Users", systemImage: "person.2", value: 1) { UsersView() }
+                    Tab("Moderation", systemImage: "shield", value: 2) { ModerationView() }
+                    Tab("Verification", systemImage: "checkmark.seal", value: 3) { VerificationView() }
+                    Tab("Economy", systemImage: "coins", value: 4) { EconomyView() }
+                    Tab("Content", systemImage: "photo.stack", value: 5) { ContentView() }
+                    Tab("Analytics", systemImage: "chart.bar", value: 6) { AnalyticsView() }
+                    Tab("Server", systemImage: "server.rack", value: 7) { ServerView() }
+                    Tab("Audit", systemImage: "list.bullet.rectangle", value: 8) { AuditView() }
                 }
                 .tint(.orange)
                 .overlay(alignment: .top) {
