@@ -35,7 +35,7 @@ struct SetGreenIntent: AppIntent {
     func perform() async throws -> some IntentResult {
         DeepLinkStore.request(section: "status.green")
         // TODO(sync): записать статус через APIClient + WidgetCenter.reloadAllTimelines().
-        .result()
+        return .result()
     }
 }
 

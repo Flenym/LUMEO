@@ -376,8 +376,9 @@ struct ChatView: View {
     }
 
     private func applyEdit() {
-        guard let editing, !editText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              let i = messages.firstIndex(where: { $0.id == editing.id }) else { editing = nil; return }
+        // ВАЖНО: `guard let editing` тенил @State как let — используем другое имя.
+        guard let target = editing, !editText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              let i = messages.firstIndex(where: { $0.id == target.id }) else { editing = nil; return }
         Haptics.selection()
         messages[i].text = editText
         messages[i].editedAt = .now
@@ -749,9 +750,12 @@ struct ComposerView: View {
                 .padding(.horizontal)
             }
             HStack(spacing: 10) {
+                // tint заранее: label PhotosPicker — Sendable-closure (Swift 6),
+                // theme (@Environment, MainActor) внутри него недоступен.
+                let attachTint = theme.current.secondary
                 PhotosPicker(selection: $pickerItems, matching: .any(of: [.images, .videos])) {
                     Image(systemName: "plus.circle.fill")
-                        .foregroundStyle(theme.current.secondary)
+                        .foregroundStyle(attachTint)
                 }
                 .accessibilityLabel(String(localized: "chats.attach"))
                 // TextEditor (а не TextField): многострочность + textView для UITests.
@@ -793,7 +797,9 @@ struct VoiceRecordButton: View {
     @State private var duration: Double = 0
     @State private var amplitudes: [Float] = []
     @State private var dragOffset: CGSize = .zero
-    @State private var timer: Timer?
+    // Тикер — Task, а не Timer: блок scheduledTimer — Sendable-closure,
+    // мутация @State из него запрещена (Swift 6). Task-вариант компилируется.
+    @State private var ticker: Task<Void, Never>?
 
     var body: some View {
         ZStack {
@@ -891,17 +897,21 @@ struct VoiceRecordButton: View {
         isRecording = true
         duration = 0
         amplitudes = []
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 0.15, repeats: true) { _ in
-            duration += 0.15
-            amplitudes.append(Float.random(in: 0.15...0.95))
-            if amplitudes.count > 40 { amplitudes.removeFirst() }
+        ticker?.cancel()
+        ticker = Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(0.15))
+                guard !Task.isCancelled else { return }
+                duration += 0.15
+                amplitudes.append(Float.random(in: 0.15...0.95))
+                if amplitudes.count > 40 { amplitudes.removeFirst() }
+            }
         }
     }
 
     private func finish(send: Bool) {
-        timer?.invalidate()
-        timer = nil
+        ticker?.cancel()
+        ticker = nil
         Haptics.voiceStop()
         let result = (duration, amplitudes)
         isRecording = false

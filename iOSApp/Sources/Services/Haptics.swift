@@ -7,6 +7,9 @@ import UIKit
 
 // MARK: - Haptics
 
+/// Все вызовы — из SwiftUI (MainActor). UIKit-генераторы в новом SDK
+/// MainActor-изолированы, поэтому весь enum изолирован (Swift 6).
+@MainActor
 enum Haptics {
     private static let enabledKey = "lumeo.hapticsEnabled"
 

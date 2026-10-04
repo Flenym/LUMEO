@@ -131,7 +131,8 @@ struct VerificationRequest: Identifiable, Hashable {
 
 /// Beta-бейдж закрыт: approve запрещён, только история.
 enum BetaGate {
-    static var isBetaClosed = true
+    /// Константа (не var): Swift 6 запрещает мутабельные статики без изоляции.
+    static let isBetaClosed = true
 
     static func canApprove(kind: VerificationKind) -> Bool {
         // Beta-очередь закрыта отдельным флагом (см. VerificationView).

@@ -316,7 +316,6 @@ struct SessionInviteCard: View {
         }
         .padding(14)
         .background(theme.current.surface, in: .rect(cornerRadius: 16))
-        .glassEffect(.regular, in: .rect(cornerRadius: 16))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(session.game), \(hostName)")
     }
