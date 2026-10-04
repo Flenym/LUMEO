@@ -28,6 +28,9 @@ enum WSEvent: Equatable {
 // MARK: - WebSocketService
 
 /// Realtime-движок чатов/статусов/сессий. Один инстанс на приложение (передаётся через Environment).
+/// Изоляция MainActor: использование только из SwiftUI (Swift 6 concurrency-safe),
+/// Task-захваты self компилируются, callbacks — через MainActor.run.
+@MainActor
 @Observable
 final class WebSocketService {
     private(set) var state: WSConnectionState = .disconnected
