@@ -1,8 +1,9 @@
 // Lumeo Admin — Tests/ModerationTests.swift
 // Тесты дедупликации репортов по report_cluster_id + beta-closed + grant-audit.
-// NOTE(Xcode): добавить @testable import <AdminTarget> (имя продукта в Xcode 26).
 
 import XCTest
+
+@testable import LumeoAdmin
 
 // MARK: - ReportClusterTests
 
