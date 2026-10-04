@@ -1,6 +1,6 @@
-// Lumeo — Production xcconfig (CloudPub prod tunnel / future real backend).
-// Заменить реальным CloudPub доменом, не хардкодить:
-// прод-домен задается ТОЛЬКО здесь (или env), никогда в Swift-коде.
-API_BASE_URL = https://REAL-CLOUDPUB-DOMAIN.cloudpub.ru
-WS_BASE_URL = wss://REAL-CLOUDPUB-DOMAIN.cloudpub.ru/ws
+// Lumeo — Production xcconfig (CloudPub tunnel).
+// Реальный домен (2026-10-04): https://lumeo.cloudpub.ru → localhost:5267.
+// Задаётся ТОЛЬКО здесь (или env), никогда в Swift-коде.
+API_BASE_URL = https://lumeo.cloudpub.ru
+WS_BASE_URL = wss://lumeo.cloudpub.ru/ws
 EMBER_CURRENCY_NAME = EMBER

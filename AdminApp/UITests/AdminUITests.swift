@@ -6,6 +6,8 @@
 //
 import XCTest
 
+/// См. комментарий в LumeoUITests: Xcode 26 требует @MainActor для XCUI.
+@MainActor
 final class AdminUITests: XCTestCase {
     var app: XCUIApplication!
 

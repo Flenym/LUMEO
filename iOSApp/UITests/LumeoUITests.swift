@@ -6,6 +6,9 @@
 //
 import XCTest
 
+/// Xcode 26 изолирует тесты MainActor по умолчанию — явная аннотация
+/// обязательна, иначе XCUIApplication-APIs не компилируются (Swift 6).
+@MainActor
 final class LumeoUITests: XCTestCase {
     var app: XCUIApplication!
 
