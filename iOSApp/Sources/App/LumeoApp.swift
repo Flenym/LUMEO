@@ -134,6 +134,8 @@ struct LumeoApp: App {
             }
             .sheet(isPresented: $showCreateSession) {
                 CreateSessionSheet()
+                    .environment(theme)
+                    .environment(socket)
             }
             // ВАЖНО: deepSessionBinding — обычное вычисляемое свойство (не @State),
             // поэтому без префикса $ (иначе "cannot find $... in scope").
@@ -141,9 +143,13 @@ struct LumeoApp: App {
                 NavigationStack {
                     SessionDetailView(session: session)
                 }
+                .environment(theme)
+                .environment(socket)
             }
             .sheet(item: deepFriendBinding) { friend in
                 FriendProfileSheet(friend: friend)
+                    .environment(theme)
+                    .environment(socket)
             }
             .fullScreenCover(isPresented: $locked) {
                 FaceLockView {
@@ -151,11 +157,12 @@ struct LumeoApp: App {
                 }
             }
             // Онбординг поверх табов, пока не пройдена регистрация.
+            // theme — параметром (см. комментарий в OnboardingView).
             .fullScreenCover(isPresented: Binding(
                 get: { !registered },
                 set: { if $0 { registered = false } }
             )) {
-                OnboardingView {
+                OnboardingView(theme: theme) {
                     registered = true
                 }
             }

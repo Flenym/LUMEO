@@ -14,7 +14,10 @@ private enum OnboardingStep {
 // MARK: - OnboardingView
 
 struct OnboardingView: View {
-    @Environment(ThemeManager.self) private var theme
+    // Theme параметром, а не @Environment: fullScreenCover на старте
+    // иногда не видит environment-провайдер (краш "No Observable object").
+    // @Observable — reference type, обновления темы доходят и так.
+    var theme: ThemeManager = ThemeManager()
     var onComplete: () -> Void
 
     @State private var step: OnboardingStep = .register
