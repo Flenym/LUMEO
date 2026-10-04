@@ -126,7 +126,7 @@ jobs:
   ios-main:
     name: ios-main (xcodegen + build-for-testing + xctest + screenshots)
     runs-on: macos-15
-    timeout-minutes: 45
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
       - name: Select newest Xcode (needs iOS 26 SDK + Swift 6)
@@ -224,9 +224,9 @@ jobs:
                   break
           " "$LATEST" | head -40
           fi
-      - name: Screenshots (10 screens)
+      - name: Screenshots (10 screens, reuse build)
         if: always()
-        run: chmod +x scripts/screenshots.sh && ./scripts/screenshots.sh --project iOSApp/Lumeo.xcodeproj --scheme Lumeo --device "iPhone 17" --out screenshots
+        run: chmod +x scripts/screenshots.sh && ./scripts/screenshots.sh --project iOSApp/Lumeo.xcodeproj --scheme Lumeo --device "iPhone 17" --out screenshots --derived-data DerivedData --no-build
       - name: Upload screenshots / test artifacts
         if: always()
         uses: actions/upload-artifact@v4

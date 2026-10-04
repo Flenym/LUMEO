@@ -3,10 +3,12 @@
 #
 # Usage:
 #   ./scripts/screenshots.sh [--project iOSApp/Lumeo.xcodeproj] [--scheme Lumeo]
-#                            [--device "iPhone 16"] [--out screenshots] [--config Development]
+#                            [--device "iPhone 17"] [--out screenshots] [--config Development]
+#                            [--derived-data DerivedData] [--no-build]
 #
 # Flow (no fastlane):
-#   1. `xcodebuild test` with `-resultBundlePath` (includes LumeoUITests, 7 critical flows).
+#   1. `xcodebuild test` (default) или `test-without-building` (--no-build,
+#      переиспользует продукты из --derived-data — в 2 раза быстрее в CI).
 #   2. Extract PNG attachments from the .xcresult via `xcresulttool` -> $OUT/xcresult/.
 #   3. Fallback / supplement: `xcrun simctl io <device> screenshot` for the 10 screens
 #      from Design/screens.md: onboarding, Home, Friends, Session, Chat, Squad,
@@ -17,9 +19,11 @@ set -euo pipefail
 
 PROJECT="iOSApp/Lumeo.xcodeproj"
 SCHEME="Lumeo"
-DEVICE="iPhone 16"
+DEVICE="iPhone 17"
 OUT="screenshots"
 CONFIG="Development"
+DERIVED_DATA=""
+NO_BUILD=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -28,6 +32,8 @@ while [[ $# -gt 0 ]]; do
     --device) DEVICE="$2"; shift 2 ;;
     --out) OUT="$2"; shift 2 ;;
     --config) CONFIG="$2"; shift 2 ;;
+    --derived-data) DERIVED_DATA="$2"; shift 2 ;;
+    --no-build) NO_BUILD=1; shift ;;
     *) echo "Unknown arg: $1" >&2; exit 1 ;;
   esac
 done
@@ -41,9 +47,15 @@ fi
 mkdir -p "$OUT"
 RESULT_BUNDLE="$OUT/LumeoTests.xcresult"
 
-echo "==> xcodebuild test (scheme=$SCHEME, device=$DEVICE) -> $RESULT_BUNDLE"
+if [[ "$NO_BUILD" == 1 && -n "$DERIVED_DATA" ]]; then
+  echo "==> xcodebuild test-without-building (reuse $DERIVED_DATA) -> $RESULT_BUNDLE"
+  TEST_CMD=(test-without-building -derivedDataPath "$DERIVED_DATA")
+else
+  echo "==> xcodebuild test (scheme=$SCHEME, device=$DEVICE) -> $RESULT_BUNDLE"
+  TEST_CMD=(test)
+fi
 set +e
-xcodebuild test \
+xcodebuild "${TEST_CMD[@]}" \
   -project "$PROJECT" \
   -scheme "$SCHEME" \
   -configuration "$CONFIG" \
