@@ -66,6 +66,25 @@ struct LumeoApp: App {
 
     var body: some Scene {
         WindowGroup {
+            Group {
+                if !registered {
+                    // Онбординг — обычным корневым экраном, а не fullScreenCover:
+                    // исключает гонку презентации на старте и потерю environment.
+                    OnboardingView(theme: theme) {
+                        registered = true
+                    }
+                    .preferredColorScheme(.dark)
+                    .environment(\.locale, theme.locale)
+                } else {
+                    mainTabs
+                }
+            }
+        }
+    }
+
+    // MARK: - Main tabs (после онбординга)
+
+    private var mainTabs: some View {
             ZStack(alignment: .bottom) {
                 TabView(selection: $tab) {
                     Tab(String(localized: "tab.home"), systemImage: "house.fill", value: .home) {
@@ -156,16 +175,6 @@ struct LumeoApp: App {
                     authenticate()
                 }
             }
-            // Онбординг поверх табов, пока не пройдена регистрация.
-            // theme — параметром (см. комментарий в OnboardingView).
-            .fullScreenCover(isPresented: Binding(
-                get: { !registered },
-                set: { if $0 { registered = false } }
-            )) {
-                OnboardingView(theme: theme) {
-                    registered = true
-                }
-            }
             .onOpenURL { url in
                 guard let link = DeepLink(url: url) else { return }
                 handleDeepLink(link)
@@ -178,7 +187,6 @@ struct LumeoApp: App {
             .task {
                 await pollOfflineQueue()
             }
-        }
     }
 
     // MARK: - Deep links

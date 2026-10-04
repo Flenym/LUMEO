@@ -70,6 +70,44 @@ jobs:
           done
           psql "$DATABASE_URL" -c "SELECT count(*) FROM information_schema.tables WHERE table_schema='public';"
 
+  ios-build:
+    name: ios-build (xcodegen + compile both apps, no tests)
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select newest Xcode
+        run: |
+          NEWEST="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+          echo "Using Xcode: $NEWEST"
+          sudo xcode-select -s "$NEWEST/Contents/Developer"
+          xcodebuild -version
+      - name: Install xcodegen
+        run: |
+          if ! command -v xcodegen >/dev/null 2>&1; then
+            brew install xcodegen
+          fi
+      - name: Generate projects
+        run: |
+          ( cd iOSApp && xcodegen generate )
+          ( cd AdminApp && xcodegen generate )
+      - name: Build for testing (main + admin schemes)
+        run: |
+          xcodebuild build-for-testing \
+            -project iOSApp/Lumeo.xcodeproj \
+            -scheme Lumeo \
+            -configuration Development \
+            -destination 'platform=iOS Simulator,name=iPhone 17' \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+          xcodebuild build-for-testing \
+            -project AdminApp/LumeoAdmin.xcodeproj \
+            -scheme LumeoAdmin \
+            -configuration Development \
+            -destination 'platform=iOS Simulator,name=iPhone 17' \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+
   ios-lint:
     name: ios-lint (swiftlint/swiftformat, non-blocking)
     runs-on: macos-15
@@ -203,7 +241,9 @@ jobs:
     name: ipa-main (unsigned)
     runs-on: macos-15
     timeout-minutes: 30
-    needs: [ios-main]
+    # IPA зависит только от успешной СБОРКИ, а не от тестов:
+    # артефакты доступны, даже пока чинятся flaky UI-тесты.
+    needs: [ios-build]
     steps:
       - uses: actions/checkout@v4
       - name: Select newest Xcode
@@ -228,7 +268,7 @@ jobs:
     name: ipa-admin (unsigned)
     runs-on: macos-15
     timeout-minutes: 30
-    needs: [ios-main]
+    needs: [ios-build]
     steps:
       - uses: actions/checkout@v4
       - name: Select newest Xcode
