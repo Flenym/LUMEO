@@ -10,7 +10,10 @@ import Foundation
 
 // MARK: - XPRank
 
-/// Ранг по уровню — зеркало backend Rank 1-в-1.
+/// Ранг по уровню. Шкала iOS (шаг 5: 1/5/10/15/20/25/30) — НЕ 1-в-1 с backend
+/// (там Stone2/Iron3/Master23/Grandmaster26 есть, здесь нет): расхождение
+/// зафиксировано, выравнивание шкал — отдельной задачей (см. Docs/TESTING.md).
+/// Тесты ниже проверяют именно эту шкалу.
 enum XPRank: String, CaseIterable {
     case wood = "Wood"
     case bronze = "Bronze"
@@ -55,7 +58,7 @@ enum XPEngine {
 
     // MARK: Rank (паритет backend rankForLevel)
 
-    /// Ранг по уровню — зеркало backend rankForLevel 1-в-1.
+    /// Ранг по уровню (iOS-шкала, см. XPRank).
     static func rankForLevel(_ level: Int) -> XPRank {
         if level >= 30 { return .legend }
         if level >= 25 { return .diamond }
