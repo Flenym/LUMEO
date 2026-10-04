@@ -15,7 +15,8 @@ final class LumeoUITests: XCTestCase {
     /// Async setUp: выполняется изолированно на MainActor (иначе XCUI-APIs
     /// недоступны из nonisolated контекста в Swift 6 / Xcode 26).
     override func setUp() async throws {
-        try await super.setUp()
+        // Без super.setUp(): базовый XCTestCase.setUp пуст, а его вызов
+        // пересылает non-Sendable self через изоляцию (Swift 6 error).
         continueAfterFailure = false
         app = XCUIApplication()
         app.launchArguments = ["--uitesting", "--reset-state"]
