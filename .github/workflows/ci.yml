@@ -111,6 +111,15 @@ jobs:
         run: |
           ( cd iOSApp && xcodegen generate )
           ( cd AdminApp && xcodegen generate )
+      - name: Verify xcconfig wiring (ground truth)
+        run: |
+          echo "=== xcconfig as seen by runner ==="
+          cat -A iOSApp/Config/Development.xcconfig | head -8 || true
+          echo "=== pbxproj baseConfiguration refs ==="
+          grep -c "baseConfigurationReference" iOSApp/Lumeo.xcodeproj/project.pbxproj || echo "(none!)"
+          grep -m3 -B2 -A1 "Development.xcconfig\|Beta.xcconfig" iOSApp/Lumeo.xcodeproj/project.pbxproj || echo "(no xcconfig file refs)"
+          echo "=== resolved build setting ==="
+          xcodebuild -showBuildSettings -project iOSApp/Lumeo.xcodeproj -scheme Lumeo -configuration Development 2>/dev/null | grep -m4 -i "API_BASE_URL\|WS_BASE_URL\|CONFIGURATION_BUILD_DIR" || true
       - name: Build for testing (main scheme)
         run: |
           xcodebuild build-for-testing \

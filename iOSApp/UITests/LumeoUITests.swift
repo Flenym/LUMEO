@@ -34,6 +34,15 @@ final class LumeoUITests: XCTestCase {
         return el
     }
 
+    /// Скриншот в аттачменты (lifetime keepAlways): экспорт через
+    /// `xcresulttool export attachments` → ревью дизайна по настоящим экранам.
+    private func shot(_ name: String) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
     /// Сквозной онбординг (каждый тест стартует с --reset-state).
     private func passOnboarding(username: String = "uitest_user") {
         wait("onboarding.register.email").tap()
@@ -65,6 +74,7 @@ final class LumeoUITests: XCTestCase {
         wait("profile.setup.displayName").tap()
         wait("profile.setup.done").tap()
         XCTAssertTrue(wait("home.freeList").waitForExistence(timeout: 5))
+        shot("02-home")
     }
 
     // MARK: 2. search → request → accept (friends)
@@ -80,6 +90,7 @@ final class LumeoUITests: XCTestCase {
         XCTAssertTrue(wait("friends.request.pending").exists)
         // Stubbed counterpart accepts; status flips to accepted.
         XCTAssertTrue(wait("friends.request.accepted", timeout: 15).exists)
+        shot("03-friends")
     }
 
     // MARK: 3. green → yellow → red (status)
@@ -96,6 +107,7 @@ final class LumeoUITests: XCTestCase {
         // Custom text ≤140 chars + TTL timer + auto-revert covered by stub asserts.
         wait("status.save").tap()
         XCTAssertTrue(wait("status.saved").exists)
+        shot("04-status")
     }
 
     // MARK: 4. create → invite → accept → join → finish (session)
@@ -114,6 +126,7 @@ final class LumeoUITests: XCTestCase {
         XCTAssertTrue(wait("session.banner.live").exists)
         wait("session.finish").tap()
         XCTAssertTrue(wait("session.banner.finished").exists)
+        shot("05-session")
     }
 
     // MARK: 5. send → receive → read (chat, E2EE ciphertext only on wire)
@@ -129,6 +142,7 @@ final class LumeoUITests: XCTestCase {
         XCTAssertTrue(wait("chat.message.sent").exists)
         XCTAssertTrue(wait("chat.message.delivered", timeout: 15).exists)
         XCTAssertTrue(wait("chat.message.read", timeout: 15).exists)
+        shot("06-chat")
     }
 
     // MARK: 6. edit → save → reload (profile constructor)
@@ -140,12 +154,14 @@ final class LumeoUITests: XCTestCase {
         wait("profile.edit").tap()
         wait("profile.block.bio").tap()
         XCTAssertTrue(wait("profile.block.system").exists, "System blocks must be non-removable")
+        shot("07-profile-edit")
         wait("profile.save").tap()
         app.terminate()
         launch() // reload from "server" (profile.saved пережил рестарт, онбординг проходим заново)
         passOnboarding(username: "uitest_two")
         wait("tab.profile").tap()
         XCTAssertTrue(wait("profile.saved").exists)
+        shot("08-profile")
     }
 
     // MARK: 7. create → moderation → publish → preview (workshop)
@@ -165,5 +181,6 @@ final class LumeoUITests: XCTestCase {
         XCTAssertTrue(wait("workshop.status.published", timeout: 15).exists)
         wait("workshop.preview").tap()
         XCTAssertTrue(wait("workshop.preview.canvas").exists)
+        shot("09-workshop")
     }
 }

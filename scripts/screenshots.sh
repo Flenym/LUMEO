@@ -85,10 +85,20 @@ for rt in data.get('devices', {}).values():
 " 2>/dev/null || true)"
 if [[ -n "${UDID:-}" ]]; then
   xcrun simctl boot "$UDID" 2>/dev/null || true
+  # Дождаться загрузки (иначе screenshot пишет пустые PNG).
+  xcrun simctl bootstatus "$UDID" -b 2>/dev/null || sleep 20
   for SCREEN in onboarding home friends session chat squad profile workshop premium settings admin; do
     # App under UITest navigates itself; one frame per screen name.
-    xcrun simctl io "$UDID" screenshot "$OUT/simctl/${SCREEN}.png" 2>/dev/null || true
-    echo "  - $OUT/simctl/${SCREEN}.png"
+    if ! xcrun simctl io "$UDID" screenshot "$OUT/simctl/${SCREEN}.png" 2>/dev/null; then
+      echo "  - FAILED: $SCREEN"
+      continue
+    fi
+    if [[ ! -s "$OUT/simctl/${SCREEN}.png" ]]; then
+      echo "  - EMPTY (0 bytes, dropped): $SCREEN"
+      rm -f "$OUT/simctl/${SCREEN}.png"
+    else
+      echo "  - $OUT/simctl/${SCREEN}.png"
+    fi
   done
 else
   echo "==> WARNING: simulator '$DEVICE' not found; skipping simctl screenshots"
