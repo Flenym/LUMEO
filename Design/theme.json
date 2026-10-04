@@ -1,0 +1,64 @@
+{
+  "name": "Lumeo OLED Orange",
+  "version": "1.1.0",
+  "default": true,
+  "colors": {
+    "background": "#000000",
+    "backgroundSecondary": "#0A0A0B",
+    "surface": "#131316",
+    "surfaceSecondary": "#1C1C1F",
+    "textPrimary": "#FFFFFF",
+    "textSecondary": "#A1A1AA",
+    "textTertiary": "#636366",
+    "accent": "#FF6B00",
+    "accentPressed": "#E05E00",
+    "accentSoft": "#FF6B0026",
+    "success": "#34C759",
+    "warning": "#FFCC00",
+    "danger": "#FF3B30",
+    "online": "#34C759",
+    "away": "#FFCC00",
+    "offline": "#8E8E93"
+  },
+  "statusColors": {
+    "green": "#34C759",
+    "yellow": "#FFCC00",
+    "red": "#FF3B30"
+  },
+  "themes": [
+    { "id": "oled-orange", "name": "OLED Orange", "accent": "#FF6B00", "builtin": true },
+    { "id": "purple", "name": "Purple", "accent": "#AF52DE", "builtin": true },
+    { "id": "blue", "name": "Blue", "accent": "#0A84FF", "builtin": true },
+    { "id": "cyan", "name": "Cyan", "accent": "#64D2FF", "builtin": true },
+    { "id": "green", "name": "Green", "accent": "#30D158", "builtin": true },
+    { "id": "yellow", "name": "Yellow", "accent": "#FFD60A", "builtin": true },
+    { "id": "red", "name": "Red", "accent": "#FF453A", "builtin": true },
+    { "id": "pink", "name": "Pink", "accent": "#FF375F", "builtin": true },
+    { "id": "white", "name": "White", "accent": "#FFFFFF", "builtin": true },
+    { "id": "black", "name": "Black", "accent": "#1C1C1E", "builtin": true }
+  ],
+  "spacing": {
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "xxl": 32
+  },
+  "radius": { "sm": 8, "md": 12, "lg": 16, "xl": 24, "pill": 999 },
+  "typography": {
+    "font": "System",
+    "title": { "size": 28, "weight": "bold" },
+    "headline": { "size": 17, "weight": "semibold" },
+    "body": { "size": 15, "weight": "regular" },
+    "caption": { "size": 12, "weight": "regular" }
+  },
+  "motion": {
+    "fast": 150,
+    "base": 250,
+    "slow": 350,
+    "maxDurationMs": 300,
+    "easing": "easeOut",
+    "reduceMotion": "respect-system"
+  }
+}

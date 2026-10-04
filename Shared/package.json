@@ -1,0 +1,17 @@
+{
+  "name": "@lumeo/shared",
+  "version": "0.1.0",
+  "description": "Lumeo shared TypeScript contracts (mirror of Swift Models)",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rimraf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "rimraf": "^5.0.0"
+  }
+}

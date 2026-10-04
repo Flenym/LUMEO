@@ -1,0 +1,16 @@
+# Normalize line endings across Windows/macOS/Linux.
+* text=auto eol=lf
+*.sh text eol=lf
+*.swift text eol=lf
+*.ts text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.xcconfig text eol=lf
+*.xcstrings text eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.heic binary
+*.mp4 binary
+*.m4a binary

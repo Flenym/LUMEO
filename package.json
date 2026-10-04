@@ -1,0 +1,17 @@
+{
+  "name": "lumeo-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "Backend",
+    "Shared"
+  ],
+  "scripts": {
+    "dev": "npm --workspace Backend run dev",
+    "build": "npm --workspace Shared run build && npm --workspace Backend run build",
+    "test": "npm --workspace Backend run test && npm --workspace Shared run typecheck",
+    "typecheck": "npm --workspace Shared run typecheck",
+    "seed": "bash scripts/seed.sh",
+    "lint": "npm --workspace Backend run lint --if-present && npm --workspace Shared run lint --if-present"
+  }
+}

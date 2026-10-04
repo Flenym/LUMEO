@@ -1,0 +1,34 @@
+# Node / TS
+node_modules/
+dist/
+build/
+coverage/
+
+# Env & secrets — never commit real secrets
+.env
+.env.local
+.env.*.local
+
+# iOS artifacts
+*.ipa
+Payload/
+DerivedData/
+*.dSYM.zip
+*.xcarchive
+
+# macOS / Xcode
+.DS_Store
+*.xcuserstate
+*.xcuserdata
+xcuserdata/
+DerivedData/
+
+# Visual QA baselines (golden committed, current run output ignored)
+Design/golden/current/
+
+# Storage (local filesystem backend on beta)
+storage/
+
+# Logs / temp
+*.log
+tmp/

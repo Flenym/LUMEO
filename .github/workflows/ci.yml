@@ -1,0 +1,244 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shared:
+    name: shared (node build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: Shared
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: Shared/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm run typecheck --if-present
+
+  backend:
+    name: backend (build/test/integration/seed-validate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: lumeo
+          POSTGRES_PASSWORD: lumeo
+          POSTGRES_DB: lumeo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U lumeo"
+          --health-interval=10s --health-timeout=5s --health-retries=5
+    defaults:
+      run:
+        working-directory: Backend
+    env:
+      DATABASE_URL: postgres://lumeo:lumeo@localhost:5432/lumeo_test
+      JWT_SECRET: ci-test-secret
+      JWT_REFRESH_SECRET: ci-test-refresh-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: Backend/package-lock.json
+      - run: npm ci
+      - run: npm run build --if-present
+      - run: npm test --if-present
+      - name: Seed-validate (apply migrations to throwaway Postgres)
+        run: |
+          echo "==> expected migrations: 001_init (required), 002/003 (backend agent scope)"
+          test -f migrations/001_init.sql || { echo "ERROR: migrations/001_init.sql missing"; exit 1; }
+          for f in migrations/002_*.sql migrations/003_*.sql; do
+            [ -e "$f" ] && echo "found: $f" || echo "NOTE: $f not present yet (backend scope) — skipping"
+          done
+          for f in migrations/*.sql; do
+            echo "==> applying $f"
+            psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f"
+          done
+          psql "$DATABASE_URL" -c "SELECT count(*) FROM information_schema.tables WHERE table_schema='public';"
+
+  ios-lint:
+    name: ios-lint (swiftlint/swiftformat, non-blocking)
+    runs-on: macos-15
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint Swift (best-effort)
+        run: |
+          if command -v swiftlint >/dev/null 2>&1; then
+            swiftlint lint --strict iOSApp/Sources AdminApp/Sources || true
+          elif command -v swiftformat >/dev/null 2>&1; then
+            swiftformat --lint iOSApp AdminApp || true
+          else
+            echo "NOTE: neither swiftlint nor swiftformat installed — lint skipped (non-blocking)"
+          fi
+
+  ios-main:
+    name: ios-main (xcodegen + build-for-testing + xctest + screenshots)
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode 16
+        run: sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer || sudo xcode-select -p
+      - name: Install xcodegen
+        run: |
+          if ! command -v xcodegen >/dev/null 2>&1; then
+            brew install xcodegen
+          fi
+          xcodegen --version
+      - name: Generate projects
+        run: |
+          ( cd iOSApp && xcodegen generate )
+          ( cd AdminApp && xcodegen generate )
+      - name: Build for testing (main scheme)
+        run: |
+          xcodebuild build-for-testing \
+            -project iOSApp/Lumeo.xcodeproj \
+            -scheme Lumeo \
+            -configuration Development \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.0' \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+      - name: Test 7 critical paths (auth/friends/status/session/chat/profile/workshop)
+        run: |
+          xcodebuild test-without-building \
+            -project iOSApp/Lumeo.xcodeproj \
+            -scheme Lumeo \
+            -configuration Development \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.0' \
+            -derivedDataPath DerivedData \
+            -resultBundlePath TestResults/LumeoTests.xcresult \
+            -only-testing:LumeoTests/AuthTests \
+            -only-testing:LumeoTests/FriendsTests \
+            -only-testing:LumeoTests/StatusTests \
+            -only-testing:LumeoTests/SessionTests \
+            -only-testing:LumeoTests/ChatTests \
+            -only-testing:LumeoTests/ProfileTests \
+            -only-testing:LumeoTests/WorkshopTests
+      - name: Screenshots (10 screens)
+        if: always()
+        run: chmod +x scripts/screenshots.sh && ./scripts/screenshots.sh --project iOSApp/Lumeo.xcodeproj --scheme Lumeo --out screenshots
+      - name: Upload screenshots / test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-screenshots
+          path: |
+            screenshots
+            TestResults/LumeoTests.xcresult
+
+  ipa-main:
+    name: ipa-main (unsigned)
+    runs-on: macos-15
+    timeout-minutes: 30
+    needs: [ios-main]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode 16
+        run: sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer || sudo xcode-select -p
+      - name: Install xcodegen
+        run: |
+          if ! command -v xcodegen >/dev/null 2>&1; then
+            brew install xcodegen
+          fi
+      - name: Build unsigned IPA (main)
+        run: chmod +x scripts/build-unsigned-ipa.sh && ./scripts/build-unsigned-ipa.sh --scheme Lumeo --project iOSApp/Lumeo.xcodeproj --config Production --output Lumeo-unsigned.ipa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Lumeo-unsigned.ipa
+          path: Lumeo-unsigned.ipa
+
+  ipa-admin:
+    name: ipa-admin (unsigned)
+    runs-on: macos-15
+    timeout-minutes: 30
+    needs: [ios-main]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode 16
+        run: sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer || sudo xcode-select -p
+      - name: Install xcodegen
+        run: |
+          if ! command -v xcodegen >/dev/null 2>&1; then
+            brew install xcodegen
+          fi
+      - name: Build unsigned IPA (admin)
+        run: chmod +x scripts/build-unsigned-ipa.sh && ./scripts/build-unsigned-ipa.sh --scheme LumeoAdmin --project AdminApp/LumeoAdmin.xcodeproj --config Production --output Lumeo-Admin-unsigned.ipa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Lumeo-Admin-unsigned.ipa
+          path: Lumeo-Admin-unsigned.ipa
+
+  secrets-guard:
+    name: secrets-guard (no secrets in repo)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan for leaked secrets
+        run: chmod +x scripts/secrets-scan.sh && ./scripts/secrets-scan.sh
+
+  visual-qa:
+    name: visual-qa (pixel-diff vs golden, threshold 5%)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [ios-main]
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: ios-screenshots
+          path: screenshots
+      - name: Pixel-diff current vs Design/golden
+        run: |
+          echo "==> visual-qa: threshold 5% per screen"
+          if [ ! -d "Design/golden" ] || [ -z "$(ls -A Design/golden 2>/dev/null || true)" ]; then
+            echo "WARNING: Design/golden/ is empty — no baselines yet. Screenshots collected for review, diff skipped."
+            exit 0
+          fi
+          pip install --quiet pillow 2>/dev/null || true
+          python3 - "$@" <<'EOF'
+          import os, sys
+          from PIL import Image, ImageChops
+          golden_dir, current_dir = "Design/golden", "screenshots"
+          threshold, failures = 0.05, []
+          for name in os.listdir(golden_dir):
+              g = os.path.join(golden_dir, name)
+              cands = [os.path.join(r, name) for r, _, fs in os.walk(current_dir) for f in fs if f == name]
+              if not cands:
+                  print(f"MISSING current screenshot for golden {name}")
+                  failures.append(name); continue
+              a = Image.open(g).convert("RGB")
+              b = Image.open(cands[0]).convert("RGB").resize(a.size)
+              diff = ImageChops.difference(a, b)
+              hist = diff.histogram()
+              # fraction of channels with non-trivial difference
+              total = a.size[0] * a.size[1] * 3
+              changed = sum(n for i, n in enumerate(hist) if (i % 256) > 12)
+              ratio = changed / total
+              print(f"{name}: diff={ratio:.3%} (threshold={threshold:.0%})")
+              if ratio > threshold: failures.append(name)
+          if failures:
+              print(f"FAIL: {len(failures)} screen(s) exceed threshold: {failures}")
+              sys.exit(1)
+          print("OK: all screens within threshold")
+          EOF
