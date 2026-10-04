@@ -65,6 +65,17 @@ targets:
       # симулятор требует extensionDictionary в установленном appex.
       INFOPLIST_FILE: Widgets/Info.plist
       INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    # Пост-штамп NSExtension в собранный appex: builtin-infoPlistUtility
+    # иногда теряет словарь — скрипт гарантирует его наличие (видно в CI-дампе).
+    postBuildScripts:
+      - name: Stamp NSExtension (sim install requires extensionDictionary)
+        script: |
+          set -euo pipefail
+          PLIST="${BUILT_PRODUCTS_DIR}/${CONTENTS_FOLDER_PATH}/Info.plist"
+          /usr/libexec/PlistBuddy -c "Delete :NSExtension" "$PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :NSExtension dict" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :NSExtension:NSExtensionPointIdentifier string com.apple.widgetkit-extension" "$PLIST"
+          echo "Stamped NSExtension into $PLIST"
 
   LumeoLiveActivity:
     type: app-extension
@@ -86,6 +97,15 @@ targets:
       PRODUCT_BUNDLE_IDENTIFIER: com.lumeo.app.liveactivity
       INFOPLIST_FILE: LiveActivities/Info.plist
       INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    postBuildScripts:
+      - name: Stamp NSExtension (sim install requires extensionDictionary)
+        script: |
+          set -euo pipefail
+          PLIST="${BUILT_PRODUCTS_DIR}/${CONTENTS_FOLDER_PATH}/Info.plist"
+          /usr/libexec/PlistBuddy -c "Delete :NSExtension" "$PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c "Add :NSExtension dict" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :NSExtension:NSExtensionPointIdentifier string com.apple.widgetkit-extension" "$PLIST"
+          echo "Stamped NSExtension into $PLIST"
 
   LumeoTests:
     type: bundle.unit-test
