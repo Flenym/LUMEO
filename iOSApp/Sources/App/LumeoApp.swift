@@ -135,12 +135,14 @@ struct LumeoApp: App {
             .sheet(isPresented: $showCreateSession) {
                 CreateSessionSheet()
             }
-            .sheet(item: $deepSessionBinding) { session in
+            // ВАЖНО: deepSessionBinding — обычное вычисляемое свойство (не @State),
+            // поэтому без префикса $ (иначе "cannot find $... in scope").
+            .sheet(item: deepSessionBinding) { session in
                 NavigationStack {
                     SessionDetailView(session: session)
                 }
             }
-            .sheet(item: $deepFriendBinding) { friend in
+            .sheet(item: deepFriendBinding) { friend in
                 FriendProfileSheet(friend: friend)
             }
             .fullScreenCover(isPresented: $locked) {

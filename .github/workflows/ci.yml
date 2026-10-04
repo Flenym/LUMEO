@@ -93,9 +93,14 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - name: Select latest Xcode (needs iOS 26 SDK + Swift 6)
+      - name: Select newest Xcode (needs iOS 26 SDK + Swift 6)
         run: |
-          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer || sudo xcode-select -p
+          ls -d /Applications/Xcode*.app
+          # /Applications/Xcode.app может указывать на старый 16.x —
+          # берём максимальный по версии (Xcode 26+ для iOS 26 SDK).
+          NEWEST="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+          echo "Using Xcode: $NEWEST"
+          sudo xcode-select -s "$NEWEST/Contents/Developer"
           xcodebuild -version
           xcrun simctl list devicetypes | grep -i iphone | head -5 || true
       - name: Install xcodegen
@@ -145,8 +150,12 @@ jobs:
     needs: [ios-main]
     steps:
       - uses: actions/checkout@v4
-      - name: Select latest Xcode
-        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer || sudo xcode-select -p
+      - name: Select newest Xcode
+        run: |
+          NEWEST="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+          echo "Using Xcode: $NEWEST"
+          sudo xcode-select -s "$NEWEST/Contents/Developer"
+          xcodebuild -version
       - name: Install xcodegen
         run: |
           if ! command -v xcodegen >/dev/null 2>&1; then
@@ -166,8 +175,12 @@ jobs:
     needs: [ios-main]
     steps:
       - uses: actions/checkout@v4
-      - name: Select latest Xcode
-        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer || sudo xcode-select -p
+      - name: Select newest Xcode
+        run: |
+          NEWEST="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+          echo "Using Xcode: $NEWEST"
+          sudo xcode-select -s "$NEWEST/Contents/Developer"
+          xcodebuild -version
       - name: Install xcodegen
         run: |
           if ! command -v xcodegen >/dev/null 2>&1; then
