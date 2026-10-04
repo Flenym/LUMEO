@@ -19,7 +19,7 @@ struct ThemesView: View {
     var body: some View {
         List {
             Section(String(localized: "profile.themes.official")) {
-                ForEach(AppTheme.officialTen, id: \.name) { option in
+                ForEach(AppTheme.all, id: \.name) { option in
                     ThemeRow(
                         option: option,
                         isSelected: selectedName == option.name,
