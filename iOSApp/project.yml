@@ -64,6 +64,10 @@ targets:
     bundleId: com.lumeo.app.liveactivity
     sources:
       - path: LiveActivities
+      # Shared models: экстеншен — отдельный таргет и видит только свои sources.
+      # Дублирование value-типов (GameSession и др.) безопасно.
+      - path: Sources/Core/Models.swift
+      - path: Sources/Theme/AppTheme.swift
     settings:
       CODE_SIGNING_ALLOWED: NO
       PRODUCT_BUNDLE_IDENTIFIER: com.lumeo.app.liveactivity
