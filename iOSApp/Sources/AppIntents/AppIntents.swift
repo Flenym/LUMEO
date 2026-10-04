@@ -152,63 +152,63 @@ struct LumeoShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: SetGreenIntent(),
             phrases: [
-                "Set Lumeo status to free",
-                "Поставь статус свободен в Люмео",
+                "Set ${applicationName} status to free",
+                "Поставь статус свободен в ${applicationName}",
             ],
             shortTitle: "I'm free",
             systemImageName: "circle.fill"
         )
         AppShortcut(
             intent: SetYellowIntent(),
-            phrases: ["Set Lumeo status to later", "Поставь статус буду позже в Люмео"],
+            phrases: ["Set ${applicationName} status to later", "Поставь статус буду позже в ${applicationName}"],
             shortTitle: "Be later",
             systemImageName: "clock.fill"
         )
         AppShortcut(
             intent: SetRedIntent(),
-            phrases: ["Set Lumeo status to busy", "Поставь статус занят в Люмео"],
+            phrases: ["Set ${applicationName} status to busy", "Поставь статус занят в ${applicationName}"],
             shortTitle: "I'm busy",
             systemImageName: "nosign"
         )
         AppShortcut(
             intent: OpenFriendsIntent(),
-            phrases: ["Open Lumeo friends", "Открой друзей в Люмео"],
+            phrases: ["Open ${applicationName} friends", "Открой друзей в ${applicationName}"],
             shortTitle: "Friends",
             systemImageName: "person.2.fill"
         )
         AppShortcut(
             intent: OpenChatsIntent(),
-            phrases: ["Open Lumeo chats", "Открой чаты в Люмео"],
+            phrases: ["Open ${applicationName} chats", "Открой чаты в ${applicationName}"],
             shortTitle: "Chats",
             systemImageName: "bubble.left.and.bubble.right.fill"
         )
         AppShortcut(
             intent: OpenProfileIntent(),
-            phrases: ["Open my Lumeo profile", "Открой мой профиль в Люмео"],
+            phrases: ["Open my ${applicationName} profile", "Открой мой профиль в ${applicationName}"],
             shortTitle: "Profile",
             systemImageName: "person.crop.circle.fill"
         )
         AppShortcut(
             intent: CreateSessionIntent(),
-            phrases: ["Create Lumeo session", "Создай игру в Люмео"],
+            phrases: ["Create ${applicationName} session", "Создай игру в ${applicationName}"],
             shortTitle: "Let's play",
             systemImageName: "gamecontroller.fill"
         )
         AppShortcut(
             intent: OpenActiveSessionIntent(),
-            phrases: ["Open active Lumeo session", "Открой активную игру в Люмео"],
+            phrases: ["Open active ${applicationName} session", "Открой активную игру в ${applicationName}"],
             shortTitle: "Active session",
             systemImageName: "play.circle.fill"
         )
         AppShortcut(
             intent: JoinSessionIntent(),
-            phrases: ["Join Lumeo session", "Войди в игру в Люмео"],
+            phrases: ["Join ${applicationName} session", "Войди в игру в ${applicationName}"],
             shortTitle: "Join",
             systemImageName: "arrow.right.circle.fill"
         )
         AppShortcut(
             intent: LeaveSessionIntent(),
-            phrases: ["Leave Lumeo session", "Выйди из игры в Люмео"],
+            phrases: ["Leave ${applicationName} session", "Выйди из игры в ${applicationName}"],
             shortTitle: "Leave",
             systemImageName: "arrow.left.circle.fill"
         )
