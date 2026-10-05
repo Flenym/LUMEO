@@ -121,6 +121,8 @@ targets:
       - target: LumeoApp
 
   # UI-тесты — отдельным bundle.ui-testing таргетом (XCUI нельзя класть в unit bundle).
+  # TEST_TARGET_NAME обязателен: без него XCUIApplication init падает
+  # (Assertion failure — раннер не знает target application).
   LumeoUITests:
     type: bundle.ui-testing
     platform: iOS
@@ -131,6 +133,7 @@ targets:
     settings:
       CODE_SIGNING_ALLOWED: NO
       PRODUCT_BUNDLE_IDENTIFIER: com.lumeo.app.uitests
+      TEST_TARGET_NAME: LumeoApp
 
 schemes:
   Lumeo:

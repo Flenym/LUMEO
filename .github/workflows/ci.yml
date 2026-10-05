@@ -227,6 +227,25 @@ jobs:
             -derivedDataPath DerivedData \
             -resultBundlePath TestResults/LumeoUnit.xcresult \
             -only-testing:LumeoTests
+      - name: Build for testing (admin scheme)
+        run: |
+          xcodebuild build-for-testing \
+            -project AdminApp/LumeoAdmin.xcodeproj \
+            -scheme LumeoAdmin \
+            -configuration Development \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.SIM_NAME }}" \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+      - name: Test AdminApp (unit + ban/audit UI)
+        run: |
+          xcodebuild test-without-building \
+            -project AdminApp/LumeoAdmin.xcodeproj \
+            -scheme LumeoAdmin \
+            -configuration Development \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.SIM_NAME }}" \
+            -derivedDataPath DerivedData \
+            -resultBundlePath TestResults/LumeoAdminTests.xcresult \
+            -retry-tests-on-failure
       - name: Test UI (7 critical flows, retry flaky cold-start aborts)
         # БЕЗ -only-testing: фильтр по UI-бандлу даёт "Executed 0 tests",
         # полный прогон схемы многократно доказан зелёным (юниты повторятся — это ~2с).
@@ -281,6 +300,7 @@ jobs:
             screenshots
             TestResults/LumeoTests.xcresult
             TestResults/LumeoUnit.xcresult
+            TestResults/LumeoAdminTests.xcresult
 
   ipa-main:
     name: ipa-main (unsigned)

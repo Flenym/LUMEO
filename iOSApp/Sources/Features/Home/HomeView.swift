@@ -59,6 +59,8 @@ struct HomeView: View {
                     }
                 }
                 .padding()
+                // Отступ от плавающей кнопки «Поиграем?» + таб-бара.
+                .safeAreaPadding(.bottom, 70)
             }
             .background {
                 ZStack {

@@ -67,6 +67,7 @@ targets:
       - target: LumeoAdmin
 
   # UI-тесты — отдельным bundle.ui-testing таргетом.
+  # TEST_TARGET_NAME обязателен (см. комментарий в iOSApp/project.yml).
   LumeoAdminUITests:
     type: bundle.ui-testing
     platform: iOS
@@ -77,6 +78,7 @@ targets:
     settings:
       CODE_SIGNING_ALLOWED: NO
       PRODUCT_BUNDLE_IDENTIFIER: com.lumeo.admin.uitests
+      TEST_TARGET_NAME: LumeoAdmin
 
 schemes:
   LumeoAdmin:
