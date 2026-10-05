@@ -149,6 +149,7 @@ struct SquadDetailView: View {
                     )
                 }
                 .tint(theme.current.primary)
+                .frame(minHeight: 44)
                 .disabled(inviteAllSent)
                 Button(role: .destructive) {
                     showLeave = true
@@ -158,6 +159,7 @@ struct SquadDetailView: View {
                         systemImage: "door.left.hand.open"
                     )
                 }
+                .frame(minHeight: 44)
             }
         }
         .scrollContentBackground(.hidden)

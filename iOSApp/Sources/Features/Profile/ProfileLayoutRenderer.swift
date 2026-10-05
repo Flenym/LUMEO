@@ -444,6 +444,7 @@ struct ProfileLayoutRenderer: View {
                 .blur(radius: 6)
                 .allowsHitTesting(false)
         } else if layout.effectID == "particles" {
+            let particleColor = theme.current.primary.opacity(0.5)
             Canvas { context, size in
                 // ~40 статичных частиц: дёшево для GPU, без SpriteKit.
                 for i in 0..<40 {
@@ -452,7 +453,7 @@ struct ProfileLayoutRenderer: View {
                     let r: Double = 1 + Double(i % 3)
                     context.fill(
                         Path(ellipseIn: CGRect(x: x, y: y, width: r * 2, height: r * 2)),
-                        with: .color(.orange.opacity(0.5))
+                        with: .color(particleColor)
                     )
                 }
             }

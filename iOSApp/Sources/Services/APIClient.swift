@@ -18,7 +18,8 @@ enum AppConfig {
             return url
         }
         // Dev-фолбэк для симулятора. Прод-URL приходит только из конфига сборки.
-        return URL(string: "https://api.lumeo.example")!
+        // Без force unwrap: последний фолбэк — file URL, который не может не спарситься.
+        return URL(string: "https://api.lumeo.example") ?? URL(fileURLWithPath: "/")
     }
 
     /// Базовый URL WebSocket (/ws). Ключ Info.plist: WSBaseURL. Если пуст — выводится из APIBaseURL.

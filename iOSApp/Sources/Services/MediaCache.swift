@@ -40,7 +40,9 @@ actor MediaCache {
     }()
 
     private var diskDirectory: URL {
-        let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+        // Без force unwrap: в песочнице без caches падаем на temporaryDirectory.
+        let base = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
         let dir = base.appending(path: "com.lumeo.app.media", directoryHint: .isDirectory)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir

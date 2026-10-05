@@ -37,7 +37,7 @@ struct ProfileView: View {
                     if profileSaved {
                         Label(String(localized: "profile.themes.saved"), systemImage: "checkmark.circle.fill")
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(theme.current.success)
                             .accessibilityIdentifier("profile.saved")
                     }
                     NavigationLink {

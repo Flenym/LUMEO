@@ -55,7 +55,7 @@ struct WalletView: View {
                             Spacer()
                             Text("\(entry.amount >= 0 ? "+" : "")\(entry.amount)")
                                 .font(.subheadline.bold().monospacedDigit())
-                                .foregroundStyle(entry.amount >= 0 ? .green : .red)
+                                .foregroundStyle(entry.amount >= 0 ? theme.current.success : theme.current.danger)
                         }
                         Text("tx:\(entry.transactionID) · \(entry.from) → \(entry.to)")
                             .font(.caption.monospaced())

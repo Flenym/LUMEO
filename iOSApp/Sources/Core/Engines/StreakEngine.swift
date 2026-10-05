@@ -18,17 +18,21 @@ struct StreakResult: Equatable {
 // MARK: - StreakEngine
 
 enum StreakEngine {
+    /// UTC без force unwrap: secondsFromGMT:0 всегда валиден, но fallback
+    /// оставлен для Swift 6 safety (продовый краш-риск из аудита).
+    private static let utcTimeZone: TimeZone = TimeZone(secondsFromGMT: 0) ?? .current
+
     /// Фиксированный UTC-календарь: streak не ломается при смене часового пояса.
     static var utcCalendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        calendar.timeZone = utcTimeZone
         return calendar
     }
 
     static let dayFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.calendar = utcCalendar
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)!
+        formatter.timeZone = utcTimeZone
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter
     }()

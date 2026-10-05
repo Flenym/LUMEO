@@ -174,7 +174,7 @@ struct SettingsView: View {
                         if let at = keysRotatedAt {
                             Text(at.formatted(date: .abbreviated, time: .shortened))
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(theme.current.textSecondary)
                         }
                         Button(String(localized: "settings.keys.rotate")) {
                             keysRotatedAt = .now // E2EE rotate stub
@@ -234,7 +234,7 @@ struct SettingsView: View {
                     .frame(minHeight: 44)
                     if restoredFlash {
                         Label(String(localized: "settings.premium.restored"), systemImage: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
+                            .foregroundStyle(theme.current.success)
                     }
                 }
                 // MARK: Danger (Privacy by design)

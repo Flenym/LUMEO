@@ -141,12 +141,12 @@ struct WorkshopView: View {
                                     Text(item.name).bold()
                                     Text(statusText(item.status))
                                         .font(.caption)
-                                        .foregroundStyle(item.status == .published ? .green : .orange)
+                                        .foregroundStyle(item.status == .published ? theme.current.success : theme.current.warning)
                                 }
                                 Spacer()
                                 Text("\(item.downloads)")
                                     .font(.caption.monospacedDigit())
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(theme.current.textSecondary)
                             }
                             .frame(minHeight: 44)
                         }
@@ -166,18 +166,19 @@ struct WorkshopView: View {
             if uitestPublished {
                 Text(String(localized: "workshop.published"))
                     .font(.subheadline.bold())
-                    .foregroundStyle(.green)
+                    .foregroundStyle(theme.current.success)
                     .accessibilityIdentifier("workshop.status.published")
                 Button(String(localized: "workshop.preview")) {
                     selected = submission
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(theme.current.primary)
+                .frame(minHeight: 44)
                 .accessibilityIdentifier("workshop.preview")
             } else {
                 Text(String(localized: "workshop.pending"))
                     .font(.subheadline)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(theme.current.warning)
                     .accessibilityIdentifier("workshop.status.pendingModeration")
             }
         }
@@ -341,7 +342,7 @@ struct WorkshopDetailSheet: View {
                     }
                     if applied {
                         Label(String(localized: "profile.themes.saved"), systemImage: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
+                            .foregroundStyle(theme.current.success)
                     }
                 }
                 .padding()
@@ -409,11 +410,11 @@ struct WorkshopCreateSheet: View {
                             systemImage: "exclamationmark.triangle"
                         )
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(theme.current.warning)
                     } else if canPublishPaid {
                         Label(String(localized: "workshop.fiveFree.done"), systemImage: "checkmark.circle.fill")
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(theme.current.success)
                     }
                 }
                 Section {
@@ -440,7 +441,7 @@ struct WorkshopCreateSheet: View {
                 if submitted {
                     Section(String(localized: "workshop.pending")) {
                         Label(String(localized: "workshop.pending"), systemImage: "hourglass")
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(theme.current.warning)
                     }
                 }
             }
