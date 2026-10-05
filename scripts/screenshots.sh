@@ -5,14 +5,14 @@
 #   ./scripts/screenshots.sh [--project iOSApp/Lumeo.xcodeproj] [--scheme Lumeo]
 #                            [--device "iPhone 17"] [--out screenshots] [--config Development]
 #                            [--derived-data DerivedData] [--no-build]
+#                            [--attachments-only TestResults]
 #
-# Flow (no fastlane):
-#   1. `xcodebuild test` (default) или `test-without-building` (--no-build,
-#      переиспользует продукты из --derived-data — в 2 раза быстрее в CI).
-#   2. Extract PNG attachments from the .xcresult via `xcresulttool` -> $OUT/xcresult/.
-#   3. Fallback / supplement: `xcrun simctl io <device> screenshot` for the 10 screens
-#      from Design/screens.md: onboarding, Home, Friends, Session, Chat, Squad,
-#      Profile, Workshop, Premium, Settings (+ Admin overview when scheme is LumeoAdmin).
+# Modes:
+#   default: `xcodebuild test` (или test-without-building с --no-build),
+#     затем экспорт аттачментов + simctl fallback.
+#   --attachments-only DIR: БЕЗ запуска тестов — только экспорт PNG-аттачментов
+#     (shot() из UITests) из готовых *.xcresult в DIR. Быстро, для CI где тесты
+#     уже прогнаны отдельным шагом. Падает с ошибкой если PNG нет.
 #
 # Screenshots land in $OUT/ and are uploaded by CI as `ios-screenshots`.
 set -euo pipefail
@@ -24,6 +24,7 @@ OUT="screenshots"
 CONFIG="Development"
 DERIVED_DATA=""
 NO_BUILD=0
+ATTACHMENTS_ONLY=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -34,6 +35,7 @@ while [[ $# -gt 0 ]]; do
     --config) CONFIG="$2"; shift 2 ;;
     --derived-data) DERIVED_DATA="$2"; shift 2 ;;
     --no-build) NO_BUILD=1; shift ;;
+    --attachments-only) ATTACHMENTS_ONLY="$2"; shift 2 ;;
     *) echo "Unknown arg: $1" >&2; exit 1 ;;
   esac
 done
@@ -45,6 +47,26 @@ if [[ -f "$PROJECT_DIR/project.yml" ]] && command -v xcodegen >/dev/null 2>&1; t
 fi
 
 mkdir -p "$OUT"
+
+# Режим только-аттачменты: быстрый путь CI (тесты уже прогнаны).
+if [[ -n "$ATTACHMENTS_ONLY" ]]; then
+  echo "==> attachments-only mode from $ATTACHMENTS_ONLY"
+  mkdir -p "$OUT/xcresult"
+  for BUNDLE in "$ATTACHMENTS_ONLY"/*.xcresult; do
+    [ -d "$BUNDLE" ] || continue
+    echo "==> exporting attachments from $BUNDLE"
+    xcrun xcresulttool export attachments --path "$BUNDLE" --output-path "$OUT/xcresult" || true
+  done
+  COUNT="$(find "$OUT/xcresult" -name "*.png" 2>/dev/null | wc -l | tr -d ' ')"
+  echo "==> attachments-only done: $COUNT png(s) in $OUT/xcresult"
+  ls -R "$OUT" || true
+  if [[ "$COUNT" == "0" ]]; then
+    echo "ERROR: no PNG attachments exported (shot() missing?)" >&2
+    exit 1
+  fi
+  exit 0
+fi
+
 RESULT_BUNDLE="$OUT/LumeoTests.xcresult"
 
 if [[ "$NO_BUILD" == 1 && -n "$DERIVED_DATA" ]]; then

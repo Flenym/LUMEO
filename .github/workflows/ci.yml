@@ -268,9 +268,9 @@ jobs:
                   break
           " "$LATEST" | head -40
           fi
-      - name: Screenshots (10 screens, reuse build)
+      - name: Screenshots (export UITest attachments, no re-run)
         if: always()
-        run: chmod +x scripts/screenshots.sh && ./scripts/screenshots.sh --project iOSApp/Lumeo.xcodeproj --scheme Lumeo --device "${{ steps.sim.outputs.SIM_NAME }}" --out screenshots --derived-data DerivedData --no-build
+        run: chmod +x scripts/screenshots.sh && ./scripts/screenshots.sh --out screenshots --attachments-only TestResults
       - name: Upload screenshots / test artifacts
         if: always()
         uses: actions/upload-artifact@v4
