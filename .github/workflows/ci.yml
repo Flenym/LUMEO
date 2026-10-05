@@ -91,20 +91,42 @@ jobs:
         run: |
           ( cd iOSApp && xcodegen generate )
           ( cd AdminApp && xcodegen generate )
+      - name: Pick available iPhone simulator (runners differ)
+        id: sim
+        run: |
+          # Раннеры macos-15 разные: где-то нет iPhone 17. Берём первый
+          # доступный iPhone (предпочитаем 17), иначе создаём.
+          SIM_NAME="$(xcrun simctl list devices available -j | python3 -c "
+          import json,sys
+          devs=[d for rts in json.load(sys.stdin).get('devices',{}).values() for d in rts if d.get('isAvailable',True) and 'iPhone' in d.get('name','')]
+          for want in ('iPhone 17 Pro Max','iPhone 17 Pro','iPhone 17','iPhone 16'):
+              for d in devs:
+                  if d['name']==want: print(want); raise SystemExit
+          print(devs[0]['name'] if devs else '')
+          ")"
+          if [ -z "$SIM_NAME" ]; then
+            echo "No iPhone simulator found — creating one"
+            RUNTIME="$(xcrun simctl list runtimes -j | python3 -c "import json,sys; r=[x['identifier'] for x in json.load(sys.stdin).get('runtimes',[]) if x.get('isAvailable',True) and 'iOS' in x.get('identifier','')]; print(sorted(r)[-1] if r else '')")"
+            DEVTYPE="$(xcrun simctl list devicetypes -j | python3 -c "import json,sys; d=json.load(sys.stdin).get('devicetypes',[]); ids=[x['identifier'] for x in d if 'iPhone' in x.get('name','')]; print(next((i for i in sorted(ids,reverse=True) if 'iPhone-17' in i), sorted(ids)[-1] if ids else ''))")"
+            xcrun simctl create "CI-iPhone" "$DEVTYPE" "$RUNTIME"
+            SIM_NAME="CI-iPhone"
+          fi
+          echo "SIM_NAME=$SIM_NAME" >> "$GITHUB_OUTPUT"
+          echo "Using simulator: $SIM_NAME"
       - name: Build for testing (main + admin schemes)
         run: |
           xcodebuild build-for-testing \
             -project iOSApp/Lumeo.xcodeproj \
             -scheme Lumeo \
             -configuration Development \
-            -destination 'platform=iOS Simulator,name=iPhone 17' \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.SIM_NAME }}" \
             -derivedDataPath DerivedData \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
           xcodebuild build-for-testing \
             -project AdminApp/LumeoAdmin.xcodeproj \
             -scheme LumeoAdmin \
             -configuration Development \
-            -destination 'platform=iOS Simulator,name=iPhone 17' \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.SIM_NAME }}" \
             -derivedDataPath DerivedData \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
 
@@ -149,6 +171,26 @@ jobs:
         run: |
           ( cd iOSApp && xcodegen generate )
           ( cd AdminApp && xcodegen generate )
+      - name: Pick available iPhone simulator (runners differ)
+        id: sim
+        run: |
+          SIM_NAME="$(xcrun simctl list devices available -j | python3 -c "
+          import json,sys
+          devs=[d for rts in json.load(sys.stdin).get('devices',{}).values() for d in rts if d.get('isAvailable',True) and 'iPhone' in d.get('name','')]
+          for want in ('iPhone 17 Pro Max','iPhone 17 Pro','iPhone 17','iPhone 16'):
+              for d in devs:
+                  if d['name']==want: print(want); raise SystemExit
+          print(devs[0]['name'] if devs else '')
+          ")"
+          if [ -z "$SIM_NAME" ]; then
+            echo "No iPhone simulator found — creating one"
+            RUNTIME="$(xcrun simctl list runtimes -j | python3 -c "import json,sys; r=[x['identifier'] for x in json.load(sys.stdin).get('runtimes',[]) if x.get('isAvailable',True) and 'iOS' in x.get('identifier','')]; print(sorted(r)[-1] if r else '')")"
+            DEVTYPE="$(xcrun simctl list devicetypes -j | python3 -c "import json,sys; d=json.load(sys.stdin).get('devicetypes',[]); ids=[x['identifier'] for x in d if 'iPhone' in x.get('name','')]; print(next((i for i in sorted(ids,reverse=True) if 'iPhone-17' in i), sorted(ids)[-1] if ids else ''))")"
+            xcrun simctl create "CI-iPhone" "$DEVTYPE" "$RUNTIME"
+            SIM_NAME="CI-iPhone"
+          fi
+          echo "SIM_NAME=$SIM_NAME" >> "$GITHUB_OUTPUT"
+          echo "Using simulator: $SIM_NAME"
       - name: Verify xcconfig wiring (ground truth)
         run: |
           echo "=== xcconfig as seen by runner ==="
@@ -164,7 +206,7 @@ jobs:
             -project iOSApp/Lumeo.xcodeproj \
             -scheme Lumeo \
             -configuration Development \
-            -destination 'platform=iOS Simulator,name=iPhone 17' \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.SIM_NAME }}" \
             -derivedDataPath DerivedData \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
       - name: Debug appex Info.plist (ground truth for sim install)
@@ -181,7 +223,7 @@ jobs:
             -project iOSApp/Lumeo.xcodeproj \
             -scheme Lumeo \
             -configuration Development \
-            -destination 'platform=iOS Simulator,name=iPhone 17' \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.SIM_NAME }}" \
             -derivedDataPath DerivedData \
             -resultBundlePath TestResults/LumeoUnit.xcresult \
             -only-testing:LumeoTests
@@ -191,15 +233,17 @@ jobs:
             -project iOSApp/Lumeo.xcodeproj \
             -scheme Lumeo \
             -configuration Development \
-            -destination 'platform=iOS Simulator,name=iPhone 17' \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.SIM_NAME }}" \
             -derivedDataPath DerivedData \
             -resultBundlePath TestResults/LumeoTests.xcresult \
             -only-testing:LumeoUITests \
             -retry-tests-on-failure
       - name: Sim crash log (who read ThemeManager without provider?)
         if: failure()
+        env:
+          SIM_NAME: ${{ steps.sim.outputs.SIM_NAME }}
         run: |
-          UDID="$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin); print(next((x['udid'] for rt in d.get('devices',{}).values() for x in rt if x.get('name')=='iPhone 17'),''))")"
+          UDID="$(xcrun simctl list devices available -j | python3 -c "import json,os,sys; want=os.environ.get('SIM_NAME',''); d=json.load(sys.stdin); print(next((x['udid'] for rt in d.get('devices',{}).values() for x in rt if x.get('name')==want),''))")"
           echo "SIM: $UDID"
           xcrun simctl spawn "$UDID" log show --predicate 'process == "LumeoApp"' --info --last 10m 2>/dev/null | grep -B5 -A40 -i "fatal error" | head -100 || true
           echo "=== built app Info.plist URL keys (substitution check) ==="
@@ -226,7 +270,7 @@ jobs:
           fi
       - name: Screenshots (10 screens, reuse build)
         if: always()
-        run: chmod +x scripts/screenshots.sh && ./scripts/screenshots.sh --project iOSApp/Lumeo.xcodeproj --scheme Lumeo --device "iPhone 17" --out screenshots --derived-data DerivedData --no-build
+        run: chmod +x scripts/screenshots.sh && ./scripts/screenshots.sh --project iOSApp/Lumeo.xcodeproj --scheme Lumeo --device "${{ steps.sim.outputs.SIM_NAME }}" --out screenshots --derived-data DerivedData --no-build
       - name: Upload screenshots / test artifacts
         if: always()
         uses: actions/upload-artifact@v4
