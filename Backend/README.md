@@ -14,13 +14,51 @@ curl http://localhost:5267/health
 
 Порт: `process.env.PORT || 5267`.
 
+## PostgreSQL локально (docker-compose)
+
+Без `DATABASE_URL` сервер работает в in-memory режиме (`GET /health` → `db: degraded`).
+С базой — `db: configured`. В CI PostgreSQL поднимается отдельно, миграции
+`migrations/001_init.sql`, `002_constraints.sql`, `003_seed.sql` проверены на реальном Postgres.
+
+```bash
+cd Backend
+docker compose up -d
+# DATABASE_URL для локальной базы из docker-compose.yml:
+# postgres://lumeo:lumeo@localhost:5432/lumeo
+```
+
+Применить миграции (порядок важен: 001 → 002 → 003):
+
+```bash
+cd Backend
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/001_init.sql
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/002_constraints.sql
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/003_seed.sql
+# или все сразу из корня репозитория:
+# DATABASE_URL=postgres://lumeo:lumeo@localhost:5432/lumeo bash scripts/seed.sh
+```
+
+Проверка:
+
+```bash
+curl http://localhost:5267/health   # db: configured при заданном DATABASE_URL
+```
+
+Остановка (данные сохраняются в volume `pgdata`):
+
+```bash
+docker compose down        # с удалением данных: docker compose down -v
+```
+
 ## Миграции
 
 ```bash
 psql $DATABASE_URL -f migrations/001_init.sql
 psql $DATABASE_URL -f migrations/002_constraints.sql
 psql $DATABASE_URL -f migrations/003_seed.sql
-# или всё сразу: bash scripts/seed.sh
+# или всё сразу из корня репозитория: DATABASE_URL=... bash scripts/seed.sh
+# (скрипт применяет Backend/migrations/*.sql по порядку через psql;
+# отдельного `npm run seed` нет)
 ```
 
 002: UNIQUE lower(nickname), триггер лимита Squad 200, hot-path индексы,
@@ -70,3 +108,8 @@ npm run typecheck
 npm run build
 npm test
 ```
+
+Smoke-тест DI: `test/bootstrap.spec.ts` собирает весь `AppModule` целиком
+(`Test.createTestingModule({ imports: [AppModule] })`) — ловит ошибки вида
+«AdminService needs WalletService, but WalletModule doesn't export it»,
+которые unit-тесты отдельных сервисов не видят.
