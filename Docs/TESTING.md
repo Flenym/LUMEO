@@ -8,6 +8,26 @@
 - **Security**: secrets-guard (`scripts/secrets-scan.sh`, CI job), JWT rotation/reuse, rate-limit probes, upload MIME/size bypass attempts, E2EE negative test (server response contains no plaintext), admin metadata-only test.
 - **Visual QA** (CI `visual-qa` job): `scripts/screenshots.sh` collects 10 screens (`Design/screens.md`) → pixel-diff current vs `Design/golden/` baselines, **threshold 5%** per screen; fail if exceeded. While `Design/golden/` is empty the job warns (no baselines yet) and uploads screenshots for review instead of failing.
 
+## CI structure (`.github/workflows/ci.yml`, ground truth)
+
+Concurrency: `ci-${{ github.ref }}`, `cancel-in-progress: true`.
+
+| Job | Runner / timeout | Что делает |
+|---|---|---|
+| `shared` | ubuntu-latest / 10 мин | `npm ci` в корне → `build` + `typecheck` workspace Shared |
+| `backend` | ubuntu-latest / 20 мин, Postgres 16 service | `build` Backend → `npm test --workspace=Backend` → seed-validate: применяет `Backend/migrations/001_init.sql → 002_constraints.sql → 003_seed.sql` на throwaway-БД |
+| `ios-build` | macos-15 / 30 мин | newest Xcode + xcodegen → `build-for-testing` обеих схем (Lumeo + LumeoAdmin, iPhone 17, `CODE_SIGNING_ALLOWED=NO`), **без тестов** |
+| `ios-lint` | macos-15 / 10 мин, `continue-on-error` | swiftlint best-effort (non-blocking, пропуск если не установлен) |
+| `ios-main` | macos-15 / **75 мин** | xcodegen → `build-for-testing` → **unit отдельно** (`-only-testing:LumeoTests`) → **UI отдельно** (`-only-testing:LumeoUITests`, **`-retry-tests-on-failure`**) → `screenshots.sh` (10 экранов, `--no-build`) → upload `ios-screenshots` + оба `.xcresult` |
+| `ipa-main` | macos-15 / 30 мин, `needs: [ios-build]` | unsigned `Lumeo-unsigned.ipa` (`build-unsigned-ipa.sh`, Production) → artifact |
+| `ipa-admin` | macos-15 / 30 мин, `needs: [ios-build]` | unsigned `Lumeo-Admin-unsigned.ipa` → artifact |
+| `secrets-guard` | ubuntu-latest / 5 мин | `scripts/secrets-scan.sh` (без секретов в репо) |
+| `visual-qa` | ubuntu-latest / 10 мин, `needs: [ios-main]`, `continue-on-error` | pixel-diff screenshots vs `Design/golden/`, порог 5% на экран; пустой `golden/` = warning |
+
+Ключевое: **unit и UI разделены** (`-only-testing:LumeoTests` vs `LumeoUITests`);
+UI ретраится (`-retry-tests-on-failure`); `ios-main` — 75 мин timeout;
+**IPA зависят только от `ios-build`**, а не от тестов/всего CI.
+
 ## Acceptance criteria checklist (ТЗ п.109)
 
 - [ ] Регистрация email/username + verify с cooldown; OAuth за флагами, UI не ломается без credentials.

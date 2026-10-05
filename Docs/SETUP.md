@@ -30,8 +30,8 @@ cp .env.example .env        # Windows PowerShell: copy .env.example .env
 
 `API_BASE_URL` в коде НЕ зашит:
 - Dev: `http://localhost:5267` (`iOSApp/Config/Development.xcconfig`);
-- Beta/Prod: `https://REAL-CLOUDPUB-DOMAIN.cloudpub.ru` — заменить реальным
-  CloudPub-доменом после выпуска туннеля (только xcconfig/env, см. ТЗ §58).
+- Beta/Prod: `https://lumeo.cloudpub.ru` — реальный CloudPub-домен,
+  туннель смотрит на `localhost:5262` (см. раздел «Два инстанса backend» ниже).
 
 ## 3. База данных (опционально, но рекомендуется)
 
@@ -68,6 +68,34 @@ npm run dev
 curl.exe http://localhost:5267/health
 ```
 
+### Два инстанса backend
+
+В beta-режиме (in-memory, без Postgres) работают ДВА инстанса:
+
+- `:5267` — dev по ТЗ (`npm run dev`, `http://localhost:5267`);
+- `:5262` — за CloudPub-туннелем `lumeo.cloudpub.ru`
+  (туннель смотрит на `localhost:5262`).
+
+Запуск второго инстанса (из собранного `dist`):
+
+```bash
+npm run build --workspace=Backend
+PORT=5262 node dist/main.js
+# Windows PowerShell: $env:PORT=5262; node dist/main.js
+```
+
+Проверка обоих:
+
+```bash
+curl http://localhost:5267/health
+curl http://localhost:5262/health
+curl https://lumeo.cloudpub.ru/health
+# везде: {"status":"ok",...,"db":"degraded|configured"}
+```
+
+Оба инстанса — in-memory beta-режим, если нет `DATABASE_URL`
+(`/health` покажет `db: degraded` — это ок).
+
 ## 5. iOS на Mac: проект, симулятор, тесты
 
 ```bash
@@ -94,10 +122,11 @@ cd AdminApp && xcodegen generate && open LumeoAdmin.xcodeproj  # scheme LumeoAdm
 **Вариант А — из GitHub Actions (работает и с Windows):**
 
 1. Закоммить и запушить — CI `CI` стартует сам.
-2. Вкладка **Actions → последний зелёный прогон → Artifacts**:
+2. Артефакты IPA доступны, как только зелёный job **`ios-build`**
+   (не обязательно весь CI): вкладка **Actions → нужный прогон → Artifacts**:
    - `Lumeo-unsigned.ipa` — Main App (`com.lumeo.app`);
    - `Lumeo-Admin-unsigned.ipa` — Admin App (`com.lumeo.admin`);
-   - `ios-screenshots` — 10 экранов + `.xcresult`.
+   - `ios-screenshots` — 10 экранов + `.xcresult` (появляется после `ios-main`).
 3. Или через CLI:
    ```bash
    gh run download --name Lumeo-unsigned.ipa
@@ -126,10 +155,17 @@ Swift-модели в `iOSApp` зеркалят `Shared/src/*.ts` вручную
 
 ## 8. CloudPub-туннель (когда нужен внешний URL)
 
+Реальный домен: `https://lumeo.cloudpub.ru` → туннель на `localhost:5262`
+(второй инстанс backend, см. выше).
+
 ```bash
-cloudpub http 5267
-# выданный https://XXXX.cloudpub.ru вписать в Beta/Production xcconfig как API_BASE_URL
+cloudpub http 5262
+# проверка: curl https://lumeo.cloudpub.ru/health
 ```
+
+Выданный домен уже вписан в Beta/Production xcconfig как `API_BASE_URL`
+(только xcconfig/env, см. ТЗ §58). Локальный dev по ТЗ остаётся
+`http://localhost:5267`.
 
 ## Troubleshooting
 
