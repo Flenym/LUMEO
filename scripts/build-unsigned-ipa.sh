@@ -54,11 +54,13 @@ fi
 DESTINATION="${DESTINATION:-generic/platform=iOS}"
 
 # 2. Smoke: build-for-testing (unsigned).
-echo "==> xcodebuild build-for-testing: scheme=$SCHEME config=$CONFIG"
+# ВАЖНО: всегда Development — в Release выключена testability (ENABLE_TESTABILITY=NO)
+# и `@testable import` в тестах не компилируется. Сам archive ниже идёт в $CONFIG.
+echo "==> xcodebuild build-for-testing: scheme=$SCHEME config=Development (smoke)"
 xcodebuild \
   -project "$PROJECT" \
   -scheme "$SCHEME" \
-  -configuration "$CONFIG" \
+  -configuration Development \
   -destination "$DESTINATION" \
   CODE_SIGNING_ALLOWED=NO \
   CODE_SIGNING_REQUIRED=NO \
