@@ -85,7 +85,9 @@ struct ServerView: View {
 
     private func check() async {
         // TODO(shared): вынести в Shared APIClient; URL из конфига сборки, не хардкод.
-        let url = URL(string: "https://api.lumeo.example/health")!
+        let base = (Bundle.main.object(forInfoDictionaryKey: "APIBaseURL") as? String)
+            .flatMap(URL.init(string:)) ?? URL(string: "http://localhost:5267")!
+        let url = base.appending(path: "health")
         var request = URLRequest(url: url)
         request.timeoutInterval = 8
         do {

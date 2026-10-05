@@ -60,7 +60,17 @@ struct HomeView: View {
                 }
                 .padding()
             }
-            .background(theme.current.background)
+            .background {
+                ZStack {
+                    theme.current.background.ignoresSafeArea()
+                    Circle()
+                        .fill(theme.current.primary.opacity(0.10))
+                        .frame(width: 300, height: 300)
+                        .blur(radius: 90)
+                        .offset(y: -320)
+                        .allowsHitTesting(false)
+                }
+            }
             .navigationTitle(String(localized: "tab.home"))
             .searchable(text: $query, prompt: String(localized: "friends.search"))
             .refreshable {

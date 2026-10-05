@@ -84,8 +84,12 @@ struct ServerStatusRow: View {
     }
 
     private func check() async {
-        // TODO(backend): общий APIClient через Shared target; пока URLSession напрямую.
-        let url = URL(string: "https://api.lumeo.example/health")!
+        // URL из конфига сборки (APIBaseURL), НЕ хардкод: раньше здесь был
+        // https://api.lumeo.example и health всегда показывал unreachable.
+        // TODO(shared): вынести в Shared APIClient.
+        let base = (Bundle.main.object(forInfoDictionaryKey: "APIBaseURL") as? String)
+            .flatMap(URL.init(string:)) ?? URL(string: "http://localhost:5267")!
+        let url = base.appending(path: "health")
         var request = URLRequest(url: url)
         request.timeoutInterval = 8
         do {

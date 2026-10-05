@@ -51,11 +51,16 @@ mkdir -p "$OUT"
 # Режим только-аттачменты: быстрый путь CI (тесты уже прогнаны).
 if [[ -n "$ATTACHMENTS_ONLY" ]]; then
   echo "==> attachments-only mode from $ATTACHMENTS_ONLY"
+  rm -rf "$OUT/xcresult"
   mkdir -p "$OUT/xcresult"
   for BUNDLE in "$ATTACHMENTS_ONLY"/*.xcresult; do
     [ -d "$BUNDLE" ] || continue
-    echo "==> exporting attachments from $BUNDLE"
-    xcrun xcresulttool export attachments --path "$BUNDLE" --output-path "$OUT/xcresult" || true
+    # Отдельный подкаталог на бандл: иначе manifest.json коллизия
+    # ("Failed to generate manifest.json: file already exists").
+    SUB="$OUT/xcresult/$(basename "$BUNDLE" .xcresult)"
+    mkdir -p "$SUB"
+    echo "==> exporting attachments from $BUNDLE -> $SUB"
+    xcrun xcresulttool export attachments --path "$BUNDLE" --output-path "$SUB" || true
   done
   COUNT="$(find "$OUT/xcresult" -name "*.png" 2>/dev/null | wc -l | tr -d ' ')"
   echo "==> attachments-only done: $COUNT png(s) in $OUT/xcresult"

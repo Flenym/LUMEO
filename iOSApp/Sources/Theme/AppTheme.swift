@@ -225,7 +225,8 @@ final class ThemeManager {
     @ObservationIgnored @AppStorage("lumeo.fontScale") var fontScale: Double = 1.0
     @ObservationIgnored @AppStorage("lumeo.highContrast") var highContrastStored: Bool = false
     @ObservationIgnored @AppStorage("lumeo.reduceMotion") var reduceMotionStored: Bool = false
-    @ObservationIgnored @AppStorage("lumeo.locale") var localeIdentifier: String = "ru"
+    // Пусто = язык устройства (ru/en), выбирается в Settings и персистится.
+    @ObservationIgnored @AppStorage("lumeo.locale") var localeIdentifier: String = ""
 
     /// Базовая палитра по сохранённому имени (с миграцией легаси-имён).
     var base: AppTheme {
@@ -253,7 +254,14 @@ final class ThemeManager {
     var highContrastEnabled: Bool { highContrastStored }
 
     var locale: Locale {
-        get { Locale(identifier: localeIdentifier) }
+        get {
+            // Явный выбор из Settings — приоритет.
+            if localeIdentifier.hasPrefix("ru") { return Locale(identifier: "ru") }
+            if localeIdentifier.hasPrefix("en") { return Locale(identifier: "en") }
+            // По умолчанию — язык устройства (из поддерживаемых ru/en).
+            let code = Locale.current.language.languageCode?.identifier ?? "en"
+            return Locale(identifier: code == "ru" ? "ru" : "en")
+        }
         set { localeIdentifier = newValue.identifier }
     }
 

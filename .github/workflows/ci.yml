@@ -228,6 +228,8 @@ jobs:
             -resultBundlePath TestResults/LumeoUnit.xcresult \
             -only-testing:LumeoTests
       - name: Test UI (7 critical flows, retry flaky cold-start aborts)
+        # БЕЗ -only-testing: фильтр по UI-бандлу даёт "Executed 0 tests",
+        # полный прогон схемы многократно доказан зелёным (юниты повторятся — это ~2с).
         run: |
           xcodebuild test-without-building \
             -project iOSApp/Lumeo.xcodeproj \
@@ -236,7 +238,6 @@ jobs:
             -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.SIM_NAME }}" \
             -derivedDataPath DerivedData \
             -resultBundlePath TestResults/LumeoTests.xcresult \
-            -only-testing:LumeoUITests \
             -retry-tests-on-failure
       - name: Sim crash log (who read ThemeManager without provider?)
         if: failure()
