@@ -53,6 +53,28 @@ struct UsersView: View {
                             .onSubmit { searchFocused = false }
                             .accessibilityIdentifier("admin.users.search")
                     }
+                    // Детерминированный результат поиска (UITests): отдельная кнопка
+                    // ВНЕ List — List после фильтра может увести строку из вьюпорта
+                    // (тап по ней тогда not hittable). Тот же паттерн, что в Main App.
+                    if !query.isEmpty, let match = users.first(where: {
+                        $0.username.localizedCaseInsensitiveContains(query)
+                    }) {
+                        Button {
+                            selected = match
+                            showDetail = true
+                        } label: {
+                            HStack {
+                                Text("@\(match.username)").bold()
+                                Spacer()
+                                Text(match.isBanned ? "banned" : match.status)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(10)
+                            .background(.secondary.opacity(0.12), in: .rect(cornerRadius: 12))
+                        }
+                        .accessibilityIdentifier("admin.users.row")
+                    }
                 }
                 if let justBanned {
                     Section {
@@ -71,7 +93,7 @@ struct UsersView: View {
                             userRowLabel(user)
                         }
                         .buttonStyle(.plain)
-                        .accessibilityIdentifier(user.username == "reported_user" ? "admin.users.row" : "admin.users.row.\(user.username)")
+                        .accessibilityIdentifier("admin.users.row.\(user.username)")
                     }
                 }
                 Section("Audit") {
