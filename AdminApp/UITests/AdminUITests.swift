@@ -20,6 +20,15 @@ final class AdminUITests: XCTestCase {
         app.launchEnvironment["API_BASE_URL"] = "http://localhost:5267"
     }
 
+    /// Ждать ухода клавиатуры (анимация скрытия ~0.3с, на холодном дольше).
+    private func waitNoKeyboard(timeout: TimeInterval = 15) {
+        let gone = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == false"),
+            object: app.keyboards.element
+        )
+        _ = XCTWaiter().wait(for: [gone], timeout: timeout)
+    }
+
     // Холодный симулятор открывается 10-20с: таймаут с запасом.
     private func wait(_ id: String, timeout: TimeInterval = 25) -> XCUIElement {
         let el = app.descendants(matching: .any)[id]
@@ -44,6 +53,7 @@ final class AdminUITests: XCTestCase {
         app.textFields["admin.users.search"].typeText("reported_user")
         // Скрыть клавиатуру (иначе перекрывает строку и тап не hittable).
         app.keyboards.buttons["Search"].tap()
+        waitNoKeyboard()
         wait("admin.users.row").tap()
         // Лист перестраивается после фильтра — первый тап может промахнуться
         // по уехавшим координатам: повторяем тап если шит не открылся.

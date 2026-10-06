@@ -38,6 +38,15 @@ final class LumeoUITests: XCTestCase {
         return el
     }
 
+    /// Ждать ухода клавиатуры после Search/Return.
+    private func waitNoKeyboard(timeout: TimeInterval = 15) {
+        let gone = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == false"),
+            object: app.keyboards.element
+        )
+        _ = XCTWaiter().wait(for: [gone], timeout: timeout)
+    }
+
     /// Скриншот в аттачменты (lifetime keepAlways): экспорт через
     /// `xcresulttool export attachments` → ревью дизайна по настоящим экранам.
     private func shot(_ name: String) {
@@ -90,6 +99,7 @@ final class LumeoUITests: XCTestCase {
         wait("friends.search").tap()
         app.textFields["friends.search"].typeText("friend_two")
         app.keyboards.buttons["Search"].tap()
+        waitNoKeyboard()
         wait("friends.search.result").tap()
         wait("friends.request.send").tap()
         XCTAssertTrue(wait("friends.request.pending").exists)
