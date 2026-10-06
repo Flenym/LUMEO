@@ -20,7 +20,8 @@ final class AdminUITests: XCTestCase {
         app.launchEnvironment["API_BASE_URL"] = "http://localhost:5267"
     }
 
-    private func wait(_ id: String, timeout: TimeInterval = 10) -> XCUIElement {
+    // Холодный симулятор открывается 10-20с: таймаут с запасом.
+    private func wait(_ id: String, timeout: TimeInterval = 25) -> XCUIElement {
         let el = app.descendants(matching: .any)[id]
         XCTAssertTrue(el.waitForExistence(timeout: timeout), "Missing element: \(id)")
         return el
@@ -37,6 +38,8 @@ final class AdminUITests: XCTestCase {
         wait("admin.users.search").tap()
         app.textFields["admin.users.search"].typeText("reported_user")
         wait("admin.users.row").tap()
+        // Шит деталей открылся (иначе ban искать бессмысленно — точная диагностика).
+        XCTAssertTrue(wait("admin.user.detail").exists)
 
         // Ban with reason (metadata-only review, no E2EE plaintext visible).
         wait("admin.user.ban").tap()

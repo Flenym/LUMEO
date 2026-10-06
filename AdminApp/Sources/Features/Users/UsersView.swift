@@ -160,6 +160,7 @@ struct UserDetailSheet: View {
             List {
                 Section("Profile") {
                     MetricRow(title: "Username", value: "@\(user.username)")
+                        .accessibilityIdentifier("admin.user.detail")
                     MetricRow(title: "Status", value: user.status)
                     MetricRow(title: "Badges", value: user.badges.joined(separator: ", ").isEmpty ? "—" : user.badges.joined(separator: ", "))
                     MetricRow(title: "Level", value: "\(user.level)")
