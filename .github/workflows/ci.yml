@@ -266,6 +266,26 @@ jobs:
           UDID="$(xcrun simctl list devices available -j | python3 -c "import json,os,sys; want=os.environ.get('SIM_NAME',''); d=json.load(sys.stdin); print(next((x['udid'] for rt in d.get('devices',{}).values() for x in rt if x.get('name')==want),''))")"
           echo "SIM: $UDID"
           xcrun simctl spawn "$UDID" log show --predicate 'process == "LumeoApp"' --info --last 10m 2>/dev/null | grep -B5 -A40 -i "fatal error" | head -100 || true
+          echo "=== host crash reports (both apps) ==="
+          ls -lt ~/Library/Logs/DiagnosticReports/ 2>/dev/null | grep -iE "lumeo" | head -8 || echo "(none)"
+          for APP in LumeoApp LumeoAdmin; do
+            LATEST="$(ls -t ~/Library/Logs/DiagnosticReports/${APP}*.ips 2>/dev/null | head -1 || true)"
+            if [ -n "$LATEST" ]; then
+              echo "--- $LATEST ---"
+              python3 -c "
+          import json,sys
+          d = json.load(open(sys.argv[1]))
+          print('termination:', json.dumps(d.get('termination',{}))[:400])
+          for t in (d.get('threads') or []):
+              fr = t.get('frames',[])[:15]
+              syms = ' '.join(f.get('symbol','') for f in fr)
+              if 'Lumeo' in syms or 'SwiftUI' in syms:
+                  print('--- thread ---')
+                  [print(' ', f.get('symbol','?')) for f in fr]
+                  break
+          " "$LATEST" | head -30
+            fi
+          done
           echo "=== built app Info.plist URL keys (substitution check) ==="
           for APP in DerivedData/Build/Products/Development-iphonesimulator/LumeoApp.app; do
             /usr/libexec/PlistBuddy -c "Print :APIBaseURL" "$APP/Info.plist" 2>&1 || true

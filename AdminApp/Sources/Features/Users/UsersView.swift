@@ -32,6 +32,7 @@ struct UsersView: View {
     ]
     @State private var query = ""
     @State private var selected: AdminUser?
+    @State private var showDetail = false
     @State private var grantAmount = "500"
     @State private var audit: [AuditLogEntry] = AdminPreviewData.audit
     @State private var justBanned: String?
@@ -61,6 +62,7 @@ struct UsersView: View {
                     ForEach(visible) { user in
                         Button {
                             selected = user
+                            showDetail = true
                         } label: {
                             userRowLabel(user)
                         }
@@ -77,12 +79,14 @@ struct UsersView: View {
             }
             .navigationTitle("Users")
             .searchable(text: $query, prompt: "Search username")
-            .sheet(item: $selected) { user in
-                UserDetailSheet(
-                    user: user,
-                    grantAmount: $grantAmount,
-                    onAction: { action, amount in applyAction(user: user, action: action, amount: amount) }
-                )
+            .sheet(isPresented: $showDetail) {
+                if let user = selected {
+                    UserDetailSheet(
+                        user: user,
+                        grantAmount: $grantAmount,
+                        onAction: { action, amount in applyAction(user: user, action: action, amount: amount) }
+                    )
+                }
             }
         }
     }
