@@ -36,6 +36,7 @@ struct UsersView: View {
     @State private var grantAmount = "500"
     @State private var audit: [AuditLogEntry] = AdminPreviewData.audit
     @State private var justBanned: String?
+    @FocusState private var searchFocused: Bool
 
     private var isUITesting: Bool {
         CommandLine.arguments.contains("--uitesting")
@@ -47,6 +48,9 @@ struct UsersView: View {
                 if isUITesting {
                     Section("Search") {
                         TextField("Search username", text: $query)
+                            .focused($searchFocused)
+                            .submitLabel(.search)
+                            .onSubmit { searchFocused = false }
                             .accessibilityIdentifier("admin.users.search")
                     }
                 }

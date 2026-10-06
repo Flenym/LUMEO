@@ -42,6 +42,8 @@ final class AdminUITests: XCTestCase {
         wait("admin.tab.users").tap()
         wait("admin.users.search").tap()
         app.textFields["admin.users.search"].typeText("reported_user")
+        // Скрыть клавиатуру (иначе перекрывает строку и тап не hittable).
+        app.keyboards.buttons["Search"].tap()
         wait("admin.users.row").tap()
         // Лист перестраивается после фильтра — первый тап может промахнуться
         // по уехавшим координатам: повторяем тап если шит не открылся.

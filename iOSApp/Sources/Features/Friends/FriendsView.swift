@@ -61,6 +61,7 @@ struct FriendsView: View {
     @State private var uitestSelected = false
     @State private var uitestSent = false
     @State private var uitestAccepted = false
+    @FocusState private var uitestSearchFocused: Bool
 
     var body: some View {
         NavigationStack {
@@ -229,6 +230,9 @@ struct FriendsView: View {
         VStack(alignment: .leading, spacing: 8) {
             TextField(String(localized: "friends.search"), text: $query)
                 .textFieldStyle(.roundedBorder)
+                .focused($uitestSearchFocused)
+                .submitLabel(.search)
+                .onSubmit { uitestSearchFocused = false }
                 .accessibilityIdentifier("friends.search")
             if !query.isEmpty && !uitestSelected {
                 Button {
