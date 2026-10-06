@@ -23,7 +23,12 @@ final class AdminUITests: XCTestCase {
     // Холодный симулятор открывается 10-20с: таймаут с запасом.
     private func wait(_ id: String, timeout: TimeInterval = 25) -> XCUIElement {
         let el = app.descendants(matching: .any)[id]
-        XCTAssertTrue(el.waitForExistence(timeout: timeout), "Missing element: \(id)")
+        if !el.waitForExistence(timeout: timeout) {
+            // Диагностика: что реально на экране (обрезано до 30К).
+            print("HIERARCHY DUMP for missing \(id):")
+            print(String(app.debugDescription.prefix(30000)))
+        }
+        XCTAssertTrue(el.exists, "Missing element: \(id)")
         return el
     }
 

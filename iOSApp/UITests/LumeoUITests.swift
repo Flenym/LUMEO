@@ -30,7 +30,11 @@ final class LumeoUITests: XCTestCase {
 
     private func wait(_ id: String, timeout: TimeInterval = 10) -> XCUIElement {
         let el = app.descendants(matching: .any)[id]
-        XCTAssertTrue(el.waitForExistence(timeout: timeout), "Missing element: \(id)")
+        if !el.waitForExistence(timeout: timeout) {
+            print("HIERARCHY DUMP for missing \(id):")
+            print(String(app.debugDescription.prefix(30000)))
+        }
+        XCTAssertTrue(el.exists, "Missing element: \(id)")
         return el
     }
 
