@@ -43,6 +43,11 @@ final class AdminUITests: XCTestCase {
         wait("admin.users.search").tap()
         app.textFields["admin.users.search"].typeText("reported_user")
         wait("admin.users.row").tap()
+        // Лист перестраивается после фильтра — первый тап может промахнуться
+        // по уехавшим координатам: повторяем тап если шит не открылся.
+        if !app.descendants(matching: .any)["admin.user.detail"].waitForExistence(timeout: 5) {
+            wait("admin.users.row").tap()
+        }
         // Шит деталей открылся (иначе ban искать бессмысленно — точная диагностика).
         XCTAssertTrue(wait("admin.user.detail").exists)
 
