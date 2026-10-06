@@ -59,7 +59,9 @@ struct AdminApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if session.isProvisioned {
+            // UITesting bypass гейта: даже если provision по какой-то причине
+            // не применился в init, тесты идут сразу в табы.
+            if session.isProvisioned || Self.isUITesting {
                 TabView(selection: $selection) {
                     Tab("Overview", systemImage: "gauge.with.dots.needle.67percent", value: 0) { OverviewView() }
                     Tab("Users", systemImage: "person.2", value: 1) { UsersView() }

@@ -296,11 +296,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ios-screenshots
-          path: |
-            screenshots
-            TestResults/LumeoTests.xcresult
-            TestResults/LumeoUnit.xcresult
-            TestResults/LumeoAdminTests.xcresult
+          # Только PNG: полные .xcresult весят сотни МБ и убивают скачивание.
+          path: screenshots/**/*.png
 
   ipa-main:
     name: ipa-main (unsigned)
