@@ -120,7 +120,10 @@ struct UsersView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showDetail) {
+            // Push вместо sheet: модальная презентация на холодном симе
+            // периодически не открывается (шит не появляется, апп падает),
+            // push через navigationDestination детерминирован.
+            .navigationDestination(isPresented: $showDetail) {
                 if let user = selected {
                     UserDetailSheet(
                         user: user,
