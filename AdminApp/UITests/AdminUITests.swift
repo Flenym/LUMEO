@@ -52,7 +52,10 @@ final class AdminUITests: XCTestCase {
         wait("admin.users.search").tap()
         app.textFields["admin.users.search"].typeText("reported_user")
         // Скрыть клавиатуру (иначе перекрывает строку и тап не hittable).
-        app.keyboards.buttons["Search"].tap()
+        // Клавиатура поднимается с анимацией — ждём кнопку, иначе No matches.
+        let kbSearch = app.keyboards.buttons["Search"]
+        XCTAssertTrue(kbSearch.waitForExistence(timeout: 10))
+        kbSearch.tap()
         waitNoKeyboard()
         // Шит открывается сам по вводу (onChange в UsersView) — тапы больше
         // не нужны: тулбар/строки на холодном симе дают stale-координаты

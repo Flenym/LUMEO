@@ -98,7 +98,9 @@ final class LumeoUITests: XCTestCase {
         wait("tab.friends").tap()
         wait("friends.search").tap()
         app.textFields["friends.search"].typeText("friend_two")
-        app.keyboards.buttons["Search"].tap()
+        let kbSearch = app.keyboards.buttons["Search"]
+        XCTAssertTrue(kbSearch.waitForExistence(timeout: 10))
+        kbSearch.tap()
         waitNoKeyboard()
         wait("friends.search.result").tap()
         wait("friends.request.send").tap()
