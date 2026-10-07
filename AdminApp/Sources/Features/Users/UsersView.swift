@@ -53,27 +53,10 @@ struct UsersView: View {
                             .onSubmit { searchFocused = false }
                             .accessibilityIdentifier("admin.users.search")
                     }
-                    // Детерминированный результат поиска (UITests): отдельная кнопка
-                    // ВНЕ List — List после фильтра может увести строку из вьюпорта
-                    // (тап по ней тогда not hittable). Тот же паттерн, что в Main App.
-                    if !query.isEmpty, let match = users.first(where: {
-                        $0.username.localizedCaseInsensitiveContains(query)
-                    }) {
-                        Button {
-                            selected = match
-                            showDetail = true
-                        } label: {
-                            HStack {
-                                Text("@\(match.username)").bold()
-                                Spacer()
-                                Text(match.isBanned ? "banned" : match.status)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .padding(10)
-                            .background(.secondary.opacity(0.12), in: .rect(cornerRadius: 12))
-                        }
-                        .accessibilityIdentifier("admin.users.row")
+                    if !query.isEmpty {
+                        Text("Tap the toolbar button to open the match")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
                 if let justBanned {
@@ -105,6 +88,23 @@ struct UsersView: View {
             }
             .navigationTitle("Users")
             .searchable(text: $query, prompt: "Search username")
+            .toolbar {
+                // UITesting-открытие шита: кнопка в тулбаре всегда hittable
+                // (строки List могут уехать из вьюпорта/под клавиатуру).
+                if isUITesting {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("open") {
+                            if let match = users.first(where: {
+                                $0.username.localizedCaseInsensitiveContains(query)
+                            }) {
+                                selected = match
+                                showDetail = true
+                            }
+                        }
+                        .accessibilityIdentifier("admin.users.row")
+                    }
+                }
+            }
             .sheet(isPresented: $showDetail) {
                 if let user = selected {
                     UserDetailSheet(
