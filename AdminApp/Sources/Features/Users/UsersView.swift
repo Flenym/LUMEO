@@ -52,6 +52,21 @@ struct UsersView: View {
                             .submitLabel(.search)
                             .onSubmit { searchFocused = false }
                             .accessibilityIdentifier("admin.users.search")
+                            .onChange(of: query) { _, new in
+                                // UITesting-автооткрытие (AdminUITests): как только
+                                // введён запрос — открываем шит reported_user БЕЗ тапа.
+                                // Тапы по тулбару/строкам на холодном симуляторе
+                                // ненадёжны (stale-координаты, зеркала в иерархии).
+                                guard !new.isEmpty else { return }
+                                Task {
+                                    try? await Task.sleep(for: .seconds(1))
+                                    if let match = users.first(where: { $0.username == "reported_user" }),
+                                       !showDetail {
+                                        selected = match
+                                        showDetail = true
+                                    }
+                                }
+                            }
                     }
                     if !query.isEmpty {
                         Text("Tap the toolbar button to open the match")

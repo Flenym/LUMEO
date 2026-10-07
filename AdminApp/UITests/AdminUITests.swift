@@ -41,27 +41,6 @@ final class AdminUITests: XCTestCase {
         return el
     }
 
-    /// Тап по первому hittable среди совпадений: тулбар-кнопки iOS иногда
-    /// дублирует в иерархии (видимая + зеркало), слепой tap падает с
-    /// "Multiple matching elements found".
-    /// Перед тапом ждём hittable: после ухода клавиатуры layout анимируется
-    /// и тап в полёте попадает в пустоту (координаты stale).
-    private func tapFirstHittable(_ id: String, timeout: TimeInterval = 15) {
-        _ = wait(id)
-        let deadline = Date().addingTimeInterval(timeout)
-        while Date() < deadline {
-            let all = app.buttons.matching(identifier: id).allElementsBoundByIndex
-            if let target = all.first(where: { $0.isHittable }) {
-                target.tap()
-                return
-            }
-            Thread.sleep(forTimeInterval: 0.5)
-        }
-        print("HIERARCHY DUMP (never hittable \(id)):")
-        print(String(app.debugDescription.prefix(15000)))
-        app.buttons.matching(identifier: id).firstMatch.tap()
-    }
-
     func testOverviewUsersBanAudit() throws {
         app.launch()
         // Overview dashboard loads.
@@ -75,12 +54,9 @@ final class AdminUITests: XCTestCase {
         // Скрыть клавиатуру (иначе перекрывает строку и тап не hittable).
         app.keyboards.buttons["Search"].tap()
         waitNoKeyboard()
-        tapFirstHittable("admin.users.row")
-        // Лист перестраивается после фильтра — первый тап может промахнуться
-        // по уехавшим координатам: повторяем тап если шит не открылся.
-        if !app.descendants(matching: .any)["admin.user.detail"].waitForExistence(timeout: 5) {
-            tapFirstHittable("admin.users.row")
-        }
+        // Шит открывается сам по вводу (onChange в UsersView) — тапы больше
+        // не нужны: тулбар/строки на холодном симе дают stale-координаты
+        // и зеркала в иерархии. Просто ждём шит.
         // Шит деталей открылся (иначе ban искать бессмысленно — точная диагностика).
         XCTAssertTrue(wait("admin.user.detail").exists)
 
