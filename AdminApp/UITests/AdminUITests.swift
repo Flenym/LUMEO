@@ -44,16 +44,22 @@ final class AdminUITests: XCTestCase {
     /// Тап по первому hittable среди совпадений: тулбар-кнопки iOS иногда
     /// дублирует в иерархии (видимая + зеркало), слепой tap падает с
     /// "Multiple matching elements found".
-    private func tapFirstHittable(_ id: String) {
+    /// Перед тапом ждём hittable: после ухода клавиатуры layout анимируется
+    /// и тап в полёте попадает в пустоту (координаты stale).
+    private func tapFirstHittable(_ id: String, timeout: TimeInterval = 15) {
         _ = wait(id)
-        let all = app.buttons.matching(identifier: id).allElementsBoundByIndex
-        if let target = all.first(where: { $0.isHittable }) {
-            target.tap()
-        } else {
-            print("HIERARCHY DUMP (no hittable \(id), count=\(all.count)):")
-            print(String(app.debugDescription.prefix(15000)))
-            app.buttons.matching(identifier: id).firstMatch.tap()
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            let all = app.buttons.matching(identifier: id).allElementsBoundByIndex
+            if let target = all.first(where: { $0.isHittable }) {
+                target.tap()
+                return
+            }
+            Thread.sleep(forTimeInterval: 0.5)
         }
+        print("HIERARCHY DUMP (never hittable \(id)):")
+        print(String(app.debugDescription.prefix(15000)))
+        app.buttons.matching(identifier: id).firstMatch.tap()
     }
 
     func testOverviewUsersBanAudit() throws {
