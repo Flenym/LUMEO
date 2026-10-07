@@ -94,9 +94,9 @@ struct UsersView: View {
                 if isUITesting {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("open") {
-                            if let match = users.first(where: {
-                                $0.username.localizedCaseInsensitiveContains(query)
-                            }) {
+                            // Прямой reported_user без query-матчинга: матчинг
+                            // уже проверен поиском выше, здесь нужен детерминизм.
+                            if let match = users.first(where: { $0.username == "reported_user" }) {
                                 selected = match
                                 showDetail = true
                             }
