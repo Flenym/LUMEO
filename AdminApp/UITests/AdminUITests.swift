@@ -41,38 +41,43 @@ final class AdminUITests: XCTestCase {
         return el
     }
 
+    /// Скриншот в аттачмент (экспортируется scripts/screenshots.sh).
+    private func shot(_ name: String) {
+        let att = XCTAttachment(screenshot: app.screenshot())
+        att.name = name
+        att.lifetime = .keepAlways
+        add(att)
+    }
+
     func testOverviewUsersBanAudit() throws {
         app.launch()
         // Overview dashboard loads.
         XCTAssertTrue(wait("admin.overview").exists)
         XCTAssertTrue(wait("admin.overview.metrics").exists)
+        shot("admin-overview")
 
-        // Users list -> open flagged user.
+        // Users list -> search flagged user. Шит деталей открывается сам
+        // через onChange в UsersView (1с после ввода) — клавиатуру не трогаем,
+        // её кнопка Search на холодном симе нестабильна.
         wait("admin.tab.users").tap()
         wait("admin.users.search").tap()
         app.textFields["admin.users.search"].typeText("reported_user")
-        // Скрыть клавиатуру (иначе перекрывает строку и тап не hittable).
-        // Клавиатура поднимается с анимацией — ждём кнопку, иначе No matches.
-        let kbSearch = app.keyboards.buttons["Search"]
-        XCTAssertTrue(kbSearch.waitForExistence(timeout: 10))
-        kbSearch.tap()
-        waitNoKeyboard()
-        // Шит открывается сам по вводу (onChange в UsersView) — тапы больше
-        // не нужны: тулбар/строки на холодном симе дают stale-координаты
-        // и зеркала в иерархии. Просто ждём шит.
-        // Шит деталей открылся (иначе ban искать бессмысленно — точная диагностика).
         XCTAssertTrue(wait("admin.user.detail").exists)
+        shot("admin-user-detail")
 
         // Ban with reason (metadata-only review, no E2EE plaintext visible).
         wait("admin.user.ban").tap()
         wait("admin.user.ban.reason").tap()
+        app.textFields["admin.user.ban.reason"].typeText("spam")
         wait("admin.user.ban.confirm").tap()
         XCTAssertTrue(wait("admin.user.banned").exists)
         XCTAssertFalse(app.staticTexts["admin.user.plaintext"].exists,
                        "Admin must never see E2EE plaintext")
+        shot("admin-banned")
 
         // Audit log contains the ban entry.
         wait("admin.tab.audit").tap()
         XCTAssertTrue(wait("admin.audit.banEntry").exists)
+        shot("admin-audit")
     }
 }

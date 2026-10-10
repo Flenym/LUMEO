@@ -204,7 +204,8 @@ struct UserDetailSheet: View {
     @State private var banReason = ""
 
     var body: some View {
-        NavigationStack {
+        // Без собственного NavigationStack: шит/пуш уже внутри родительского стека.
+        Group {
             List {
                 Section("Profile") {
                     MetricRow(title: "Username", value: "@\(user.username)")
